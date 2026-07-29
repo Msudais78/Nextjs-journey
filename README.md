@@ -1,42 +1,68 @@
-# Nextjs-journey
+# 🚀 My Next.js Learning Journey
 
-In this repository, I will be sharing my Next.js learning and daily progress.
+![Next.js](https://img.shields.io/badge/Next-black?style=for-the-badge&logo=next.js&logoColor=white)
+![Status: In Progress](https://img.shields.io/badge/Status-In%20Progress-blue?style=for-the-badge)
+
+Welcome to my Next.js learning repository! After getting comfortable with React, I am taking the next step into full-stack React development by mastering Next.js. 
+
+This repository serves as a centralized hub for all my notes, experiments, and mini-projects as I explore the modern Next.js ecosystem (specifically focusing on the App Router).
 
 ---
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## 🎯 Goals
 
-## Getting Started
+- Transition from client-side React to full-stack Next.js development.
+- Master the **App Router** and understand the mental model of **React Server Components (RSC)**.
+- Learn various data fetching and caching strategies (SSR, SSG, ISR).
+- Build and deploy full-stack applications with built-in API routes (Route Handlers).
+- Integrate databases and authentication seamlessly into Next.js applications.
 
-First, run the development server:
+## 📚 Concepts Roadmap
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Here is my checklist of topics to cover. I will check these off as I conquer them!
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 1. Fundamentals & App Router
+- [x] Routing & Pages (`page.tsx`)
+- [ ] Layouts & Templates (`layout.tsx`, `template.tsx`)
+- [ ] Linking and Navigating (`next/link`, `useRouter`)
+- [ ] Server Components vs. Client Components (`"use client"`)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 2. Data Fetching & Caching
+- [ ] Fetching data on the server
+- [ ] Static vs. Dynamic rendering
+- [ ] Caching and Revalidating data (Time-based & On-demand)
+- [ ] Mutating Data (Server Actions)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 3. Advanced Routing & UI
+- [ ] Dynamic Routes (`[id]`, `[...slug]`)
+- [ ] Error Handling (`error.tsx`, `not-found.tsx`)
+- [ ] Loading UI & Streaming (`loading.tsx`, Suspense)
+- [ ] Parallel & Intercepting Routes
 
-## Learn More
+### 4. Full-Stack & Optimization
+- [ ] Route Handlers (Building a backend API)
+- [ ] Image, Font, and Script Optimization (`next/image`, `next/font`)
+- [ ] Authentication (NextAuth.js / Auth.js)
+- [ ] SEO & Metadata Integration
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🛠️ Projects Built Along the Way
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+As I learn, I am building projects of increasing complexity. You can find them in the folders below:
 
-## Deploy on Vercel
+1. **[01-routing-basics](./01-routing-basics):** A simple multi-page site to get a feel for file-based routing and layouts.
+2. **[02-server-components-demo](./02-server-components-demo):** Testing data fetching directly from the server without `useEffect`.
+3. **[03-markdown-blog](./03-markdown-blog):** A static blog using MDX and dynamic routing.
+4. **[04-fullstack-dashboard](./04-fullstack-dashboard):** *(Coming Soon)* A complete app with a database, authentication, and Server Actions.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🚀 How to Run the Code
+
+To test out any of the projects in this repository locally:
+
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/yourusername/nextjs-learning-journey.git](https://github.com/yourusername/nextjs-learning-journey.git)
+   cd nextjs-learning-journey
