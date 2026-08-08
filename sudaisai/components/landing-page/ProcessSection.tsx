@@ -28,11 +28,11 @@ export default function ProcessSection() {
 
           {/* Right Stacked Cards */}
           <div className="flex flex-col gap-6">
-            <div className="bg-[#1a1a1a] p-8 flex flex-col justify-center items-center text-center h-full min-h-[200px]">
+            <div className="bg-[#1a1a1a] p-8 flex flex-col justify-center items-center text-center h-full" style={{ minHeight: '200px' }}>
               <h3 className="text-4xl font-bold mb-2">4ms</h3>
               <p className="text-[10px] uppercase tracking-widest text-gray-400">Average Inference Time</p>
             </div>
-            <div className="bg-gradient-to-br from-cyan-900/40 to-transparent border border-cyan-900/30 p-8 flex flex-col justify-end h-full min-h-[200px]">
+            <div className="bg-gradient-to-br from-cyan-900/40 to-transparent border border-cyan-900/30 p-8 flex flex-col justify-end h-full" style={{ minHeight: '200px' }}>
               <h3 className="text-lg font-bold mb-2">Visual Rendering Pipeline</h3>
               <p className="text-xs text-gray-400">Translating phonemes into real-time 3D facial mesh deformations.</p>
             </div>

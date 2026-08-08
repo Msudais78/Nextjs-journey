@@ -1,48 +1,20 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import Image from 'next/image';
+import { useVideoPlayer } from '@/utils/constants';
 
 export default function HeroSection() {
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [currentTime, setCurrentTime] = useState('0:00');
-  const [duration, setDuration] = useState('0:00');
-  const [progressPercent, setProgressPercent] = useState(0);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  const togglePlay = () => {
-    if (videoRef.current) {
-      if (videoRef.current.paused || videoRef.current.ended) {
-        if (videoRef.current.ended) {
-          videoRef.current.currentTime = 0;
-        }
-        videoRef.current.play();
-        setIsPlaying(true);
-      } else {
-        videoRef.current.pause();
-        setIsPlaying(false);
-      }
-    }
-  };
-
-  const handleTimeUpdate = () => {
-    if (videoRef.current) {
-      const cur = videoRef.current.currentTime;
-      const dur = videoRef.current.duration || 1;
-      setProgressPercent((cur / dur) * 100);
-
-      const formatTime = (secs: number) => {
-        const m = Math.floor(secs / 60);
-        const s = Math.floor(secs % 60);
-        return `${m}:${s < 10 ? '0' : ''}${s}`;
-      };
-
-      setCurrentTime(formatTime(cur));
-      if (videoRef.current.duration) {
-        setDuration(formatTime(videoRef.current.duration));
-      }
-    }
-  };
+  const {
+    isPlaying,
+    setIsPlaying,
+    currentTime,
+    duration,
+    progressPercent,
+    videoRef,
+    togglePlay,
+    handleTimeUpdate,
+  } = useVideoPlayer();
 
   return (
     <section className="bg-white text-gray-900 pt-36 pb-24 px-6 sm:px-12 overflow-hidden">
@@ -104,10 +76,10 @@ export default function HeroSection() {
 
         {/* RIGHT COLUMN: VIDEO SHOWCASE CARD */}
         <div className="flex-1 w-full max-w-md lg:max-w-lg relative">
-          <div className="relative bg-[#0b0c16] rounded-[2.5rem] p-4 border border-gray-800 shadow-2xl overflow-hidden">
+          <div className="relative bg-[#0b0c16] rounded-3xl p-4 border border-gray-800 shadow-2xl overflow-hidden">
             
             {/* Inner Video Container */}
-            <div className="relative rounded-[2rem] overflow-hidden bg-gradient-to-b from-[#14162b] to-[#0a0b15] h-[450px] sm:h-[500px] flex flex-col justify-between p-6">
+            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-b from-[#14162b] to-[#0a0b15] flex flex-col justify-between p-6" style={{ height: '480px' }}>
               
               {/* Top Bar Overlay */}
               <div className="z-20 flex justify-between items-center">
@@ -119,7 +91,7 @@ export default function HeroSection() {
                 </div>
               </div>
 
-              {/* Video Element (Plays once on load, stops at end) */}
+              {/* Video Element */}
               <video
                 ref={videoRef}
                 src="/hero-video.mp4"
@@ -129,7 +101,7 @@ export default function HeroSection() {
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}
                 onEnded={() => setIsPlaying(false)}
-                className="absolute inset-0 w-full h-full object-cover rounded-[2rem]"
+                className="absolute inset-0 w-full h-full object-cover rounded-2xl"
               />
 
               {/* Center Graphic & Waveform Overlay */}

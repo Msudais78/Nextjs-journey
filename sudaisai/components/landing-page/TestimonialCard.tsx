@@ -15,7 +15,7 @@ export default function TestimonialCard({ quote, author, role, theme }: Testimon
   };
 
   return (
-    <div className={`p-8 flex flex-col justify-between h-full min-h-[300px] ${themeStyles[theme]}`}>
+    <div className={`p-8 flex flex-col justify-between h-full ${themeStyles[theme]}`} style={{ minHeight: '300px' }}>
       <p className="text-sm md:text-base leading-relaxed font-medium">"{quote}"</p>
       <div className="mt-8 flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-gray-500" />
