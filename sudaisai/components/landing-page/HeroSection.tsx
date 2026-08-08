@@ -1,17 +1,21 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import Button from './Button';
 
 export default function HeroSection() {
   const [isPlaying, setIsPlaying] = useState(true);
+  const [currentTime, setCurrentTime] = useState('0:00');
+  const [duration, setDuration] = useState('0:00');
+  const [progressPercent, setProgressPercent] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  const handlePlayPause = () => {
+  const togglePlay = () => {
     if (videoRef.current) {
       if (videoRef.current.paused || videoRef.current.ended) {
-        videoRef.current.currentTime = 0;
+        if (videoRef.current.ended) {
+          videoRef.current.currentTime = 0;
+        }
         videoRef.current.play();
         setIsPlaying(true);
       } else {
@@ -21,74 +25,165 @@ export default function HeroSection() {
     }
   };
 
-  return (
-    <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-6 lg:px-12 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-12">
-      <div className="flex-1 z-10 text-white">
-        <div className="inline-block px-3 py-1 mb-6 border border-cyan-500/30 text-cyan-400 text-xs font-bold uppercase tracking-widest rounded-full bg-cyan-500/10">
-          <span className="w-2 h-2 rounded-full bg-cyan-400 inline-block mr-2 animate-pulse"></span>
-          Next-Gen AI Engine Online
-        </div>
-        <h1 className="text-5xl lg:text-7xl font-bold tracking-tight leading-tight mb-6">
-          Talk to AI Like a <br/><span className="text-gray-400">Real Friend.</span>
-        </h1>
-        <p className="text-gray-400 text-lg max-w-md mb-10 leading-relaxed">
-          Experience conversational AI with unprecedented realism. Zero latency, emotional resonance, and dynamic visual synchronization built for the enterprise.
-        </p>
-        <div className="flex flex-wrap gap-4">
-          <Button variant="primary">Start Free Trial</Button>
-          <Button variant="outline" onClick={handlePlayPause}>
-             <span>{isPlaying ? '⏸ Pause Video' : '▶ Play Video'}</span>
-          </Button>
-        </div>
-      </div>
-      
-      {/* Hero Video Card Showcase */}
-      <div className="flex-1 relative w-full aspect-video sm:aspect-square max-w-lg">
-        <div className="absolute inset-0 bg-gradient-to-tr from-cyan-950/40 via-purple-950/20 to-black/90 rounded-3xl border border-gray-800 backdrop-blur-sm overflow-hidden flex flex-col items-center justify-center shadow-2xl">
-          {/* Hero Video - Plays ONCE on page load (no loop) and stops at the end */}
-          <video
-            ref={videoRef}
-            src="/hero-video.mp4"
-            autoPlay
-            controls
-            playsInline
-            onPlay={() => setIsPlaying(true)}
-            onPause={() => setIsPlaying(false)}
-            onEnded={() => setIsPlaying(false)}
-            className="absolute inset-0 w-full h-full object-cover rounded-3xl opacity-95 transition-opacity duration-500"
-          />
-          
-          {/* Subtle Gradient Overlay at top for badge readability */}
-          <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/70 to-transparent pointer-events-none rounded-t-3xl" />
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      const cur = videoRef.current.currentTime;
+      const dur = videoRef.current.duration || 1;
+      setProgressPercent((cur / dur) * 100);
 
-          {/* Floating Logo Badge on Video */}
-          <div className="absolute top-6 left-6 z-10 flex items-center gap-2 bg-black/60 px-3 py-1.5 rounded-full border border-white/10 backdrop-blur-md pointer-events-none">
-            <Image
-              src="/logo.png"
-              alt="SudaisAI Logo"
-              width={24}
-              height={24}
-              className="h-6 w-auto object-contain"
-            />
-            <span className="text-xs font-semibold text-white tracking-wider">sudaisai</span>
+      const formatTime = (secs: number) => {
+        const m = Math.floor(secs / 60);
+        const s = Math.floor(secs % 60);
+        return `${m}:${s < 10 ? '0' : ''}${s}`;
+      };
+
+      setCurrentTime(formatTime(cur));
+      if (videoRef.current.duration) {
+        setDuration(formatTime(videoRef.current.duration));
+      }
+    }
+  };
+
+  return (
+    <section className="bg-white text-gray-900 pt-36 pb-24 px-6 sm:px-12 overflow-hidden">
+      <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-16">
+        
+        {/* LEFT COLUMN: HERO TEXT & CTAS */}
+        <div className="flex-1 z-10">
+          
+          {/* Status Pill Badge */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 mb-8 bg-emerald-50 border border-emerald-200/80 text-emerald-600 rounded-full text-xs font-bold uppercase tracking-wider">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            NEXT-GEN AI ENGINE ONLINE
           </div>
 
-          {/* Play / Replay Overlay Button when paused or ended */}
-          {!isPlaying && (
-            <button
-              onClick={handlePlayPause}
-              className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 hover:bg-black/20 transition-all group"
-              aria-label="Play video"
-            >
-              <div className="w-16 h-16 rounded-full bg-cyan-500/90 text-black flex items-center justify-center text-2xl pl-1 shadow-[0_0_30px_rgba(6,182,212,0.6)] group-hover:scale-110 transition-transform">
-                ▶
-              </div>
-              <span className="mt-3 text-xs font-medium text-white tracking-wide bg-black/60 px-3 py-1 rounded-full border border-white/20">
-                Click to Play
-              </span>
+          {/* Headline */}
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-black leading-[1.08] mb-6">
+            Talk to AI Like a <br />
+            <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              Real Friend.
+            </span>
+          </h1>
+
+          {/* Description */}
+          <p className="text-gray-500 text-lg max-w-lg mb-10 leading-relaxed font-normal">
+            Experience conversational AI with unprecedented realism. Zero latency, emotional resonance, and human-like presence.
+          </p>
+
+          {/* CTAs */}
+          <div className="flex flex-wrap items-center gap-4">
+            <button className="bg-black hover:bg-gray-800 text-white font-bold text-xs uppercase tracking-wider px-7 py-4 rounded-full flex items-center gap-3 shadow-xl shadow-black/10 transition-all hover:scale-[1.02] active:scale-95">
+              <span>START FREE TRIAL</span>
+              <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">→</span>
             </button>
-          )}
+
+            <button
+              onClick={togglePlay}
+              className="bg-white hover:bg-gray-50 border border-gray-200 text-gray-800 font-bold text-xs uppercase tracking-wider px-6 py-4 rounded-full flex items-center gap-2.5 shadow-sm transition-all hover:scale-[1.02] active:scale-95"
+            >
+              <span className="text-sm">{isPlaying ? '⏸' : '▶'}</span>
+              <span>{isPlaying ? 'PAUSE VIDEO' : 'PLAY VIDEO'}</span>
+            </button>
+          </div>
+
+          {/* Social Proof */}
+          <div className="mt-12 flex items-center gap-3">
+            <div className="flex items-center -space-x-2">
+              <span className="w-7 h-7 rounded-full bg-amber-100 text-amber-800 font-bold text-xs flex items-center justify-center border-2 border-white shadow-sm">A</span>
+              <span className="w-7 h-7 rounded-full bg-blue-100 text-blue-800 font-bold text-xs flex items-center justify-center border-2 border-white shadow-sm">K</span>
+              <span className="w-7 h-7 rounded-full bg-purple-100 text-purple-800 font-bold text-xs flex items-center justify-center border-2 border-white shadow-sm">S</span>
+              <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-800 font-bold text-xs flex items-center justify-center border-2 border-white shadow-sm">+8k</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="flex text-amber-400 text-sm">★★★★★</div>
+              <span className="text-xs font-semibold text-gray-500">Trusted by 10k+ early friends</span>
+            </div>
+          </div>
+
         </div>
+
+        {/* RIGHT COLUMN: VIDEO SHOWCASE CARD */}
+        <div className="flex-1 w-full max-w-md lg:max-w-lg relative">
+          <div className="relative bg-[#0b0c16] rounded-[2.5rem] p-4 border border-gray-800 shadow-2xl overflow-hidden">
+            
+            {/* Inner Video Container */}
+            <div className="relative rounded-[2rem] overflow-hidden bg-gradient-to-b from-[#14162b] to-[#0a0b15] h-[450px] sm:h-[500px] flex flex-col justify-between p-6">
+              
+              {/* Top Bar Overlay */}
+              <div className="z-20 flex justify-between items-center">
+                <div className="bg-black/60 backdrop-blur-md px-3.5 py-1.5 rounded-full text-xs font-medium text-white flex items-center gap-2 border border-white/10 shadow-sm">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>sudaisai</span>
+                  <span className="text-gray-400">•</span>
+                  <span className="text-xs text-red-400 font-bold tracking-wider">LIVE</span>
+                </div>
+              </div>
+
+              {/* Video Element (Plays once on load, stops at end) */}
+              <video
+                ref={videoRef}
+                src="/hero-video.mp4"
+                autoPlay
+                playsInline
+                onTimeUpdate={handleTimeUpdate}
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+                onEnded={() => setIsPlaying(false)}
+                className="absolute inset-0 w-full h-full object-cover rounded-[2rem]"
+              />
+
+              {/* Center Graphic & Waveform Overlay */}
+              <div className="z-20 my-auto text-center pointer-events-none flex flex-col items-center justify-center">
+                {/* Audio Waveform Animation */}
+                <div className="flex items-end justify-center gap-1 h-8 mb-4">
+                  {[40, 70, 30, 90, 50, 80, 40, 100, 60, 30, 75, 45, 90].map((h, i) => (
+                    <span
+                      key={i}
+                      style={{ height: isPlaying ? `${h}%` : '20%' }}
+                      className="w-1 bg-white/70 rounded-full transition-all duration-300 animate-pulse"
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Custom Bottom Video Controls Bar */}
+              <div className="z-20 bg-black/80 backdrop-blur-md rounded-xl p-3 border border-white/10 flex items-center gap-3 text-white">
+                <button
+                  onClick={togglePlay}
+                  className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-xs text-white transition-colors"
+                >
+                  {isPlaying ? '⏸' : '▶'}
+                </button>
+                
+                <span className="text-xs font-mono text-gray-300">
+                  {currentTime} / {duration}
+                </span>
+
+                {/* Progress Bar */}
+                <div className="flex-1 bg-white/20 h-1.5 rounded-full overflow-hidden">
+                  <div
+                    className="bg-gradient-to-r from-blue-500 to-purple-500 h-full transition-all duration-200"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <span>🔊</span>
+                  <span>⛶</span>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Bottom Card Sub-Badge */}
+            <div className="mt-3 px-2 flex items-center gap-2 text-xs font-medium text-gray-400">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>Zero latency • 12ms response</span>
+            </div>
+
+          </div>
+        </div>
+
       </div>
     </section>
   );
