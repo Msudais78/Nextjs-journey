@@ -3,7 +3,7 @@ import React from 'react';
 interface FeatureCardProps {
   title: string;
   description: string;
-  icon?: React.ReactNode; // Optional icon prop
+  icon?: React.ReactNode;
 }
 
 export default function FeatureCard({ title, description, icon }: FeatureCardProps) {
