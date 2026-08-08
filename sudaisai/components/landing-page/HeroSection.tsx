@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import Button from './Button';
 
 export default function HeroSection() {
@@ -10,7 +11,7 @@ export default function HeroSection() {
           Next-Gen AI Engine Online
         </div>
         <h1 className="text-5xl lg:text-7xl font-bold tracking-tight leading-tight mb-6">
-          Talk to AI Like a <br/><span className="text-gray-400">Real Insaan.</span>
+          Talk to AI Like a <br/><span className="text-gray-400">Real Friend.</span>
         </h1>
         <p className="text-gray-400 text-lg max-w-md mb-10 leading-relaxed">
           Experience conversational AI with unprecedented realism. Zero latency, emotional resonance, and dynamic visual synchronization built for the enterprise.
@@ -23,12 +24,23 @@ export default function HeroSection() {
         </div>
       </div>
       
-      {/* Hero Image Mockup */}
+      {/* Hero Image Mockup with Logo */}
       <div className="flex-1 relative w-full aspect-square max-w-lg">
-        <div className="absolute inset-0 bg-gradient-to-tr from-cyan-900/20 to-purple-900/20 rounded-3xl border border-gray-800 backdrop-blur-sm overflow-hidden flex items-center justify-center">
-          <div className="w-full h-full bg-[url('https://images.unsplash.com/photo-1618331835717-801e976710b2?q=80&w=1000&auto=format&fit=crop')] bg-cover bg-center opacity-50 mix-blend-luminosity"></div>
-          <div className="absolute bottom-6 left-6 right-6 flex justify-between items-center bg-black/50 p-4 rounded-xl border border-gray-700 backdrop-blur-md">
-              <span className="text-cyan-400 text-sm flex items-center gap-2"><span className="animate-pulse">🎙️</span> Listening...</span>
+        <div className="absolute inset-0 bg-gradient-to-tr from-cyan-950/40 via-purple-950/30 to-black rounded-3xl border border-gray-800 backdrop-blur-sm overflow-hidden flex flex-col items-center justify-center p-8">
+          <div className="relative w-48 h-48 sm:w-64 sm:h-64 flex items-center justify-center">
+            <Image
+              src="/logo.png"
+              alt="SudaisAI Avatar"
+              fill
+              className="object-contain drop-shadow-[0_0_35px_rgba(168,85,247,0.4)]"
+              priority
+            />
+          </div>
+          <div className="absolute bottom-6 left-6 right-6 flex justify-between items-center bg-black/60 p-4 rounded-xl border border-gray-700/80 backdrop-blur-md">
+              <span className="text-cyan-400 text-sm flex items-center gap-2 font-medium">
+                <span className="animate-pulse">🎙️</span> Listening to you...
+              </span>
+              <span className="text-xs text-purple-400 font-mono">sudaisai v1.0</span>
           </div>
         </div>
       </div>
