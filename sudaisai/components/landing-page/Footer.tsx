@@ -9,12 +9,11 @@ export default function Footer() {
         <Image
           src="/logo.png"
           alt="SudaisAI Logo"
-          width={28}
-          height={28}
-          className="rounded-full object-contain"
+          width={120}
+          height={40}
+          className="h-10 w-auto object-contain"
         />
-        <div>
-          <span className="font-bold text-white text-base block mb-0.5">sudaisai</span>
+        <div className="border-l border-gray-800 pl-3">
           © 2026 SudaisAI. All rights reserved.
         </div>
       </div>

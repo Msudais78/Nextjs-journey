@@ -24,15 +24,15 @@ export default function HeroSection() {
         </div>
       </div>
       
-      {/* Hero Image Mockup with Logo */}
+      {/* Hero Image Mockup with Large Transparent Logo Avatar */}
       <div className="flex-1 relative w-full aspect-square max-w-lg">
-        <div className="absolute inset-0 bg-gradient-to-tr from-cyan-950/40 via-purple-950/30 to-black rounded-3xl border border-gray-800 backdrop-blur-sm overflow-hidden flex flex-col items-center justify-center p-8">
-          <div className="relative w-48 h-48 sm:w-64 sm:h-64 flex items-center justify-center">
+        <div className="absolute inset-0 bg-gradient-to-tr from-cyan-950/30 via-purple-950/20 to-black/80 rounded-3xl border border-gray-800 backdrop-blur-sm overflow-hidden flex flex-col items-center justify-center p-8">
+          <div className="relative w-64 h-64 sm:w-80 sm:h-80 flex items-center justify-center">
             <Image
               src="/logo.png"
               alt="SudaisAI Avatar"
               fill
-              className="object-contain drop-shadow-[0_0_35px_rgba(168,85,247,0.4)]"
+              className="object-contain drop-shadow-[0_0_50px_rgba(168,85,247,0.45)] transition-transform hover:scale-105 duration-500"
               priority
             />
           </div>
