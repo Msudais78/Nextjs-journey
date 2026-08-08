@@ -5,13 +5,19 @@ import Image from 'next/image';
 import Button from './Button';
 
 export default function HeroSection() {
-  const [isMuted, setIsMuted] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  const toggleSound = () => {
+  const handlePlayPause = () => {
     if (videoRef.current) {
-      videoRef.current.muted = !videoRef.current.muted;
-      setIsMuted(videoRef.current.muted);
+      if (videoRef.current.paused || videoRef.current.ended) {
+        videoRef.current.currentTime = 0;
+        videoRef.current.play();
+        setIsPlaying(true);
+      } else {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      }
     }
   };
 
@@ -30,8 +36,8 @@ export default function HeroSection() {
         </p>
         <div className="flex flex-wrap gap-4">
           <Button variant="primary">Start Free Trial</Button>
-          <Button variant="outline" onClick={toggleSound}>
-             <span>{isMuted ? '🔇 Unmute' : '🔊 Sound On'}</span>
+          <Button variant="outline" onClick={handlePlayPause}>
+             <span>{isPlaying ? '⏸ Pause Video' : '▶ Play Video'}</span>
           </Button>
         </div>
       </div>
@@ -39,14 +45,16 @@ export default function HeroSection() {
       {/* Hero Video Card Showcase */}
       <div className="flex-1 relative w-full aspect-video sm:aspect-square max-w-lg">
         <div className="absolute inset-0 bg-gradient-to-tr from-cyan-950/40 via-purple-950/20 to-black/90 rounded-3xl border border-gray-800 backdrop-blur-sm overflow-hidden flex flex-col items-center justify-center shadow-2xl">
-          {/* Hero Video with Sound Enabled and Controls */}
+          {/* Hero Video - Plays ONCE on page load (no loop) and stops at the end */}
           <video
             ref={videoRef}
             src="/hero-video.mp4"
             autoPlay
-            loop
             controls
             playsInline
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
+            onEnded={() => setIsPlaying(false)}
             className="absolute inset-0 w-full h-full object-cover rounded-3xl opacity-95 transition-opacity duration-500"
           />
           
@@ -65,13 +73,21 @@ export default function HeroSection() {
             <span className="text-xs font-semibold text-white tracking-wider">sudaisai</span>
           </div>
 
-          {/* Sound Toggle Button */}
-          <button
-            onClick={toggleSound}
-            className="absolute top-6 right-6 z-10 flex items-center gap-2 bg-black/70 hover:bg-black/90 text-cyan-300 px-3 py-1.5 rounded-full border border-cyan-500/40 backdrop-blur-md text-xs font-semibold transition-all"
-          >
-            {isMuted ? '🔇 Unmute Sound' : '🔊 Sound On'}
-          </button>
+          {/* Play / Replay Overlay Button when paused or ended */}
+          {!isPlaying && (
+            <button
+              onClick={handlePlayPause}
+              className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 hover:bg-black/20 transition-all group"
+              aria-label="Play video"
+            >
+              <div className="w-16 h-16 rounded-full bg-cyan-500/90 text-black flex items-center justify-center text-2xl pl-1 shadow-[0_0_30px_rgba(6,182,212,0.6)] group-hover:scale-110 transition-transform">
+                ▶
+              </div>
+              <span className="mt-3 text-xs font-medium text-white tracking-wide bg-black/60 px-3 py-1 rounded-full border border-white/20">
+                Click to Play
+              </span>
+            </button>
+          )}
         </div>
       </div>
     </section>
