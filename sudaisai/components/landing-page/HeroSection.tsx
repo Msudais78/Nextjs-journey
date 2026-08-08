@@ -24,23 +24,40 @@ export default function HeroSection() {
         </div>
       </div>
       
-      {/* Hero Image Mockup with Large Transparent Logo Avatar */}
-      <div className="flex-1 relative w-full aspect-square max-w-lg">
-        <div className="absolute inset-0 bg-gradient-to-tr from-cyan-950/30 via-purple-950/20 to-black/80 rounded-3xl border border-gray-800 backdrop-blur-sm overflow-hidden flex flex-col items-center justify-center p-8">
-          <div className="relative w-64 h-64 sm:w-80 sm:h-80 flex items-center justify-center">
+      {/* Hero Video Card Showcase */}
+      <div className="flex-1 relative w-full aspect-video sm:aspect-square max-w-lg">
+        <div className="absolute inset-0 bg-gradient-to-tr from-cyan-950/40 via-purple-950/20 to-black/90 rounded-3xl border border-gray-800 backdrop-blur-sm overflow-hidden flex flex-col items-center justify-center shadow-2xl">
+          {/* Hero Video */}
+          <video
+            src="/hero-video.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover rounded-3xl opacity-85 transition-opacity hover:opacity-100 duration-500"
+          />
+          
+          {/* Subtle Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none rounded-3xl" />
+
+          {/* Floating Logo Badge on Video */}
+          <div className="absolute top-6 left-6 z-10 flex items-center gap-2 bg-black/60 px-3 py-1.5 rounded-full border border-white/10 backdrop-blur-md">
             <Image
               src="/logo.png"
-              alt="SudaisAI Avatar"
-              fill
-              className="object-contain drop-shadow-[0_0_50px_rgba(168,85,247,0.45)] transition-transform hover:scale-105 duration-500"
-              priority
+              alt="SudaisAI Logo"
+              width={24}
+              height={24}
+              className="h-6 w-auto object-contain"
             />
+            <span className="text-xs font-semibold text-white tracking-wider">sudaisai</span>
           </div>
-          <div className="absolute bottom-6 left-6 right-6 flex justify-between items-center bg-black/60 p-4 rounded-xl border border-gray-700/80 backdrop-blur-md">
+
+          {/* Status Overlay */}
+          <div className="absolute bottom-6 left-6 right-6 z-10 flex justify-between items-center bg-black/70 p-4 rounded-xl border border-gray-700/80 backdrop-blur-md">
               <span className="text-cyan-400 text-sm flex items-center gap-2 font-medium">
-                <span className="animate-pulse">🎙️</span> Listening to you...
+                <span className="animate-pulse">🎙️</span> Interactive Demo Stream
               </span>
-              <span className="text-xs text-purple-400 font-mono">sudaisai v1.0</span>
+              <span className="text-xs text-purple-400 font-mono">LIVE AI</span>
           </div>
         </div>
       </div>
