@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
 import prisma from '@/utils/prisma';
+import { isValidEmail, isValidPassword } from '@/utils/validation';
 
 export async function POST(request: Request) {
   try {
@@ -16,18 +17,17 @@ export async function POST(request: Request) {
     }
 
     // 2. Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!isValidEmail(email)) {
       return NextResponse.json(
         { error: 'Please provide a valid email address.' },
         { status: 400 }
       );
     }
 
-    // 3. Validate password length
-    if (password.length < 6) {
+    // 3. Validate password format & security
+    if (!isValidPassword(password)) {
       return NextResponse.json(
-        { error: 'Password must be at least 6 characters long.' },
+        { error: 'Password must be at least 6 characters long and contain at least one letter and one number.' },
         { status: 400 }
       );
     }

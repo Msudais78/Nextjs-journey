@@ -293,6 +293,14 @@ Welcome to the complete, file-by-file documentation for the **sudaisai** project
 
 ---
 
+### 6.2 [src/utils/validation.ts](file:///e:/project/sudaisai/src/utils/validation.ts)
+- 🎯 **Why it Exists:** Centralizes input validation regular expressions and helper verification functions across the application.
+- 📄 **What it Contains:** `EMAIL_REGEX`, `PASSWORD_REGEX`, and helper functions `isValidEmail(email)` and `isValidPassword(password)`.
+- ⚙️ **Function & Purpose:** Enforces consistent email format standards and password security criteria (min 6 characters, requiring letters and numbers).
+- 🔄 **How it Works:** Imported by API routes (such as `src/app/api/auth/signup/route.ts`) and client forms to validate user inputs before processing requests.
+
+---
+
 ## 📌 7. Static Public Assets (`public/`)
 
 ### 7.1 [public/hero-video.mp4](file:///e:/project/sudaisai/public/hero-video.mp4)
