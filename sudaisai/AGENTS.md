@@ -7,3 +7,14 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+# Project Agent Rules
+
+## Codebase Documentation Rule
+- Whenever any file is **created**, **modified**, or **deleted**, you MUST update [PROJECT_DOCUMENTATION.md](file:///e:/project/sudaisai/PROJECT_DOCUMENTATION.md).
+- Record:
+  1. Why the file exists
+  2. What it contains
+  3. Its function / purpose
+  4. How it works within the overall project
+
