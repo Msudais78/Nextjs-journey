@@ -1,6 +1,10 @@
 // ============================================================
 // CONSTANTS — single source of truth for all size limits
 // ============================================================
+
+/**
+ * Single source of truth for input size limits and security thresholds across the application.
+ */
 export const INPUT_LIMITS = {
   EMAIL_MAX_LENGTH: 254,      // RFC 5321 maximum
   EMAIL_MIN_LENGTH: 5,
@@ -14,6 +18,16 @@ export const INPUT_LIMITS = {
 // ============================================================
 // EMAIL VALIDATION
 // ============================================================
+
+/**
+ * Validates that an input is a correctly formatted email address.
+ * 
+ * Performs string type check, length bounds check (RFC 5321), ReDoS-safe regex validation,
+ * and structural checks (local part <= 64, domain <= 253, no consecutive dots, no leading/trailing dots).
+ * 
+ * @param email - Unknown input value to validate as email
+ * @returns Type predicate `email is string`, true if valid
+ */
 export function isValidEmail(email: unknown): email is string {
   if (typeof email !== 'string') return false;
   
@@ -41,16 +55,42 @@ export function isValidEmail(email: unknown): email is string {
 // ============================================================
 // PASSWORD VALIDATION
 // ============================================================
+
+/**
+ * Detailed password validation response object.
+ */
 export interface PasswordValidationResult {
   valid: boolean;
   errors: string[];
 }
 
+/**
+ * Type-guard function checking whether a password satisfies all strength criteria.
+ * 
+ * @param password - Unknown input value to check
+ * @returns Type predicate `password is string`, true if all password criteria pass
+ */
 export function isValidPassword(password: unknown): password is string {
   const result = validatePasswordStrength(password);
   return result.valid;
 }
 
+/**
+ * Validates password strength against security rules and returns granular error details.
+ * 
+ * Security rules enforced:
+ * - String type check
+ * - Maximum length check (<= 128 chars) to prevent bcrypt Denial of Service (DoS)
+ * - Minimum length check (>= 10 chars)
+ * - Must contain at least one lowercase letter (`[a-z]`)
+ * - Must contain at least one uppercase letter (`[A-Z]`)
+ * - Must contain at least one numeric digit (`\d`)
+ * - Must contain at least one special character
+ * - Rejects single-character repetition patterns (e.g. "aaaaaaaaaa")
+ * 
+ * @param password - Unknown input value to validate
+ * @returns `PasswordValidationResult` containing `valid` boolean and `errors` array
+ */
 export function validatePasswordStrength(
   password: unknown
 ): PasswordValidationResult {
@@ -105,6 +145,20 @@ export function validatePasswordStrength(
 // ============================================================
 // USERNAME VALIDATION
 // ============================================================
+
+/**
+ * Validates that a username meets application requirements and security constraints.
+ * 
+ * Security rules enforced:
+ * - String type check
+ * - Length check (3 to 30 characters)
+ * - Alphanumeric, underscores, and hyphens only (`/^[a-zA-Z0-9_-]+$/`)
+ * - Cannot start or end with hyphens or underscores
+ * - Explicitly blocks null bytes (`\0`) to prevent injection attacks
+ * 
+ * @param username - Unknown input value to validate
+ * @returns Type predicate `username is string`, true if valid
+ */
 export function isValidUsername(username: unknown): username is string {
   if (typeof username !== 'string') return false;
 
@@ -129,6 +183,18 @@ export function isValidUsername(username: unknown): username is string {
 // ============================================================
 // SANITIZATION — strip dangerous characters
 // ============================================================
+
+/**
+ * Sanitizes user input string by stripping dangerous control characters and trimming whitespace.
+ * 
+ * Operations performed:
+ * - Removes null bytes (`\0`)
+ * - Removes ASCII control characters (`[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]`)
+ * - Trims leading and trailing whitespace
+ * 
+ * @param input - The raw input string to sanitize
+ * @returns Cleaned and sanitized string
+ */
 export function sanitizeString(input: string): string {
   return input
     .replace(/\0/g, '')           // Remove null bytes
@@ -139,6 +205,17 @@ export function sanitizeString(input: string): string {
 // ============================================================
 // SAFE CONSTANT-TIME COMPARISON — prevent timing attacks
 // ============================================================
+
+/**
+ * Compares two strings in constant-time to prevent timing side-channel attacks.
+ * 
+ * Useful for comparing API tokens, secret keys, or password hashes where variable-time
+ * comparison could leak information about the secret content or length.
+ * 
+ * @param a - First string
+ * @param b - Second string
+ * @returns `true` if strings are byte-for-byte identical, `false` otherwise
+ */
 export function safeCompare(a: string, b: string): boolean {
   if (a.length !== b.length) {
     // Still run comparison to prevent timing leak on length
