@@ -201,6 +201,18 @@ Welcome to the complete, file-by-file documentation for the **sudaisai** project
 
 ---
 
+### 4.5 [src/middleware.ts](file:///e:/project/sudaisai/src/middleware.ts)
+- 🎯 **Why it Exists:** Intercepts incoming HTTP requests at the edge/server level before reaching API route handlers.
+- 📄 **What it Contains:**
+  1. `middleware(request: NextRequest)` default export handler and `config.matcher` targeting `/api/auth/signup`.
+  2. Client IP extraction & strict IPv4/IPv6 validation (`getClientIP`, `isValidIP`).
+  3. IP rate limiting evaluation (`rateLimit`) enforcing max 5 requests per 15-minute window with a 1-hour block penalty on violation.
+  4. Returns HTTP 429 Too Many Requests JSON response with `Retry-After` and `X-RateLimit-*` headers on violation.
+- ⚙️ **Function & Purpose:** Protects sensitive endpoints against brute-force attacks, resource exhaustion, and automated credential stuffing.
+- 🔄 **How it Works:** Executed automatically by Next.js request pipeline on matched routes before delegating to route handlers.
+
+---
+
 ## 📌 5. UI Components Layer (`src/components/landing-page/`)
 
 ### 5.1 [src/components/landing-page/LandingPage.tsx](file:///e:/project/sudaisai/src/components/landing-page/LandingPage.tsx)
