@@ -94,13 +94,19 @@ function getClientIP(request: NextRequest): string {
  * @param ip - Client IP address
  * @returns Object containing access boolean, remaining requests count, and reset timestamp
  */
-export function rateLimit(ip: string): {
+export function rateLimit(
+  ip: string,
+  options?: { windowMs?: number; maxRequests?: number; max?: number; prefix?: string }
+): {
   allowed: boolean;
   remainingRequests: number;
   resetTime: number;
 } {
   const now = Date.now();
-  const key = `signup:${ip}`;
+  const windowMs = options?.windowMs ?? RATE_LIMIT_CONFIG.windowMs;
+  const maxRequests = options?.maxRequests ?? options?.max ?? RATE_LIMIT_CONFIG.maxRequests;
+  const prefix = options?.prefix ?? 'signup';
+  const key = `${prefix}:${ip}`;
   const record = rateLimitStore.get(key);
 
   // Periodic Memory Cleanup: If stored IP records exceed 1,000, remove expired entries to prevent memory leaks
@@ -114,9 +120,9 @@ export function rateLimit(ip: string): {
 
   // CASE 1: Brand new IP or previous rate limit window has expired
   if (!record || record.resetTime < now) {
-    const newResetTime = now + RATE_LIMIT_CONFIG.windowMs;
+    const newResetTime = now + windowMs;
     
-    // Initialize record with 1 attempt and set reset timer to 15 minutes from now
+    // Initialize record with 1 attempt and set reset timer
     rateLimitStore.set(key, {
       count: 1,
       resetTime: newResetTime,
@@ -124,13 +130,13 @@ export function rateLimit(ip: string): {
 
     return {
       allowed: true,
-      remainingRequests: RATE_LIMIT_CONFIG.maxRequests - 1,
+      remainingRequests: maxRequests - 1,
       resetTime: newResetTime,
     };
   }
 
   // CASE 2: IP has ALREADY reached or exceeded maximum allowed requests
-  if (record.count >= RATE_LIMIT_CONFIG.maxRequests) {
+  if (record.count >= maxRequests) {
     // Apply 1-hour block penalty duration if not already applied
     const extendedResetTime = Math.max(
       record.resetTime,
@@ -150,16 +156,16 @@ export function rateLimit(ip: string): {
   record.count += 1;
 
   // If this request causes the count to reach the limit, extend reset time to 1-hour penalty
-  if (record.count >= RATE_LIMIT_CONFIG.maxRequests) {
+  if (record.count >= maxRequests) {
     record.resetTime = now + RATE_LIMIT_CONFIG.blockDuration;
   }
 
   rateLimitStore.set(key, record);
 
-  const isAllowed = record.count < RATE_LIMIT_CONFIG.maxRequests;
+  const isAllowed = record.count < maxRequests;
   return {
     allowed: isAllowed,
-    remainingRequests: Math.max(0, RATE_LIMIT_CONFIG.maxRequests - record.count),
+    remainingRequests: Math.max(0, maxRequests - record.count),
     resetTime: record.resetTime,
   };
 }

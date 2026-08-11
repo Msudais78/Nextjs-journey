@@ -164,6 +164,14 @@ Welcome to the complete, file-by-file documentation for the **sudaisai** project
 
 ---
 
+### 3.5 [src/utils/email.ts](file:///e:/project/sudaisai/src/utils/email.ts)
+- 🎯 **Why it Exists:** Provides email dispatch utility functions using Nodemailer for sending OTP verification codes.
+- 📄 **What it Contains:** `sendOTPEmail(toEmail, otp)` function configuring SMTP transports (`process.env.SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`) and generating responsive HTML verification email templates.
+- ⚙️ **Function & Purpose:** Sends 6-digit OTP codes for account verification with a dev-mode console fallback when SMTP is unconfigured.
+- 🔄 **How it Works:** Called by `POST /api/auth/signup` to dispatch verification codes to users during registration.
+
+---
+
 ## 📌 4. Next.js App Router Core (`src/app/`)
 
 ### 4.1 [src/app/layout.tsx](file:///e:/project/sudaisai/src/app/layout.tsx)
@@ -191,15 +199,30 @@ Welcome to the complete, file-by-file documentation for the **sudaisai** project
 ---
 
 ### 4.4 [src/app/api/auth/signup/route.ts](file:///e:/project/sudaisai/src/app/api/auth/signup/route.ts)
-- 🎯 **Why it Exists:** Backend HTTP POST API route for registering new users.
+- 🎯 **Why it Exists:** Backend HTTP POST API route for initiating 2-step user signup and dispatching OTP code.
 - 📄 **What it Contains:**
-  1. Input validation (email, username, password length check).
+  1. Input validation & sanitization (email format, username constraints, password strength).
   2. Duplicate user check using Prisma (`prisma.user.findFirst`).
-  3. Password hashing using `bcrypt` (10 salt rounds).
-  4. Database record insertion (`prisma.user.create`) with `passwordHash`.
-  5. JSON response handling via `NextResponse`.
-- ⚙️ **Function & Purpose:** Handles secure user authentication signup flow.
-- 🔄 **How it Works:** Accessible via `POST /api/auth/signup`. Processes client payload, interacts with PostgreSQL via Prisma, and returns success/error JSON.
+  3. Secure cryptographic 6-digit OTP generation (`crypto.randomInt`).
+  4. Password & OTP hashing (`bcrypt.hash`).
+  5. Pending registration record insertion/update in `PendingRegistration` model.
+  6. Email dispatch via `sendOTPEmail`.
+- ⚙️ **Function & Purpose:** Initiates user registration flow by creating a pending registration record and emailing a 6-digit OTP.
+- 🔄 **How it Works:** Accessible via `POST /api/auth/signup`. Returns 200 JSON asking the user to submit their OTP code.
+
+---
+
+### 4.5 [src/app/api/auth/verify-otp/route.ts](file:///e:/project/sudaisai/src/app/api/auth/verify-otp/route.ts)
+- 🎯 **Why it Exists:** Backend HTTP POST API route for verifying OTP codes and completing user account registration.
+- 📄 **What it Contains:**
+  1. Input validation (6-digit numeric OTP format check).
+  2. Rate limiting check (max 5 verification attempts per 15 minutes per IP).
+  3. Pending registration lookup in `PendingRegistration` model.
+  4. Expiration check (10-minute TTL window) and failed attempt counter enforcement (max 5 attempts).
+  5. Cryptographic hash comparison (`bcrypt.compare`).
+  6. Atomic Prisma transaction (`prisma.$transaction`) creating `User` record and deleting `PendingRegistration`.
+- ⚙️ **Function & Purpose:** Guarantees that users are only registered after presenting a valid, non-expired OTP code.
+- 🔄 **How it Works:** Accessible via `POST /api/auth/verify-otp`. Returns 201 Created JSON on success.
 
 ---
 
