@@ -8,7 +8,7 @@ Welcome to the complete, file-by-file documentation for the **sudaisai** project
 
 ### 1.1 [package.json](file:///e:/project/sudaisai/package.json)
 - 🎯 **Why it Exists:** Serves as the central manifest for Node.js projects. It declares project dependencies, scripts, versioning, and environment dependencies.
-- 📄 **What it Contains:** Project metadata (`name: "sudaisai"`), npm scripts (`dev`, `build`, `start`, `lint`), production dependencies (`@prisma/client`, `bcrypt`, `cors`, `dotenv`, `jsonwebtoken`, `next`, `react`, `react-dom`), and dev dependencies (`tailwindcss`, `typescript`, `prisma`, `eslint`, `@types/*`).
+- 📄 **What it Contains:** Project metadata (`name: "sudaisai"`), npm scripts (`dev`, `build`, `start`, `lint`), production dependencies (`@prisma/client`, `bcrypt`, `cors`, `dotenv`, `jsonwebtoken`, `next`, `nodemailer`, `react`, `react-dom`), and dev dependencies (`tailwindcss`, `typescript`, `prisma`, `eslint`, `@types/nodemailer`, `@types/*`).
 - ⚙️ **Function & Purpose:** Defines the project requirements and entry points for package managers (npm/yarn/pnpm).
 - 🔄 **How it Works:** When running `npm install`, npm resolves packages listed here. When running `npm run dev`, it executes `next dev` to start the Next.js local development server.
 
@@ -126,18 +126,20 @@ Welcome to the complete, file-by-file documentation for the **sudaisai** project
 - 🎯 **Why it Exists:** The single source of truth for the project's database schema.
 - 📄 **What it Contains:**
   - `generator client`: Configures JS client generator.
-  - `datasource db`: Specifies database dialect (`mysql`).
-  - `model User`: Defines the user table schema (`id`, `email`, `username`, `password`, `createdAt`, `updatedAt`).
-- ⚙️ **Function & Purpose:** Generates type-safe database access code and handles schema migrations.
-- 🔄 **How it Works:** Executed by `npx prisma generate` to populate `@prisma/client` and `npx prisma db push` to alter MySQL database tables.
+  - `datasource db`: Specifies database dialect (`postgresql`). (Note: In Prisma v7+, database URL is declared in `prisma.config.ts`).
+  - `enum Role`: User access permission roles (`USER`, `ADMIN`).
+  - `model PendingRegistration`: Temporary table for unverified 2-Factor/OTP registrations storing `email`, `username`, `passwordHash`, `otpHash`, `otpExpiresAt`, `attempts`, and indexed by `otpExpiresAt`.
+  - `model User`: Persistent user account model mapped to `users` SQL table storing CUID `id`, `email`, `username`, `passwordHash`, `isEmailVerified`, `role`, `createdAt`, and `updatedAt`.
+- ⚙️ **Function & Purpose:** Generates type-safe database access code (`PrismaClient`) and handles database schema migrations.
+- 🔄 **How it Works:** Executed by `npx prisma generate` to populate `@prisma/client` and `npx prisma validate` to verify schema integrity.
 
 ---
 
 ### 3.2 [prisma.config.ts](file:///e:/project/sudaisai/prisma.config.ts)
-- 🎯 **Why it Exists:** Custom configuration file for Prisma CLI tools.
-- 📄 **What it Contains:** Configuration mapping schema path (`prisma/schema.prisma`), migrations path, and `DATABASE_URL` resolution from `.env`.
-- ⚙️ **Function & Purpose:** Provides explicit pathing for Prisma v7+ CLI commands.
-- 🔄 **How it Works:** Read by Prisma CLI during schema compilation and migration execution.
+- 🎯 **Why it Exists:** Custom configuration file for Prisma CLI tools (required in Prisma v7+).
+- 📄 **What it Contains:** Configuration mapping schema path (`prisma/schema.prisma`), migrations path (`prisma/migrations`), and database URL resolution (`process.env["DATABASE_URL"]`).
+- ⚙️ **Function & Purpose:** Provides connection credentials and configuration settings for Prisma CLI commands (migrate, validate, generate).
+- 🔄 **How it Works:** Read by Prisma CLI during schema compilation, validation, and migration execution.
 
 ---
 
@@ -194,10 +196,10 @@ Welcome to the complete, file-by-file documentation for the **sudaisai** project
   1. Input validation (email, username, password length check).
   2. Duplicate user check using Prisma (`prisma.user.findFirst`).
   3. Password hashing using `bcrypt` (10 salt rounds).
-  4. Database record insertion (`prisma.user.create`).
+  4. Database record insertion (`prisma.user.create`) with `passwordHash`.
   5. JSON response handling via `NextResponse`.
 - ⚙️ **Function & Purpose:** Handles secure user authentication signup flow.
-- 🔄 **How it Works:** Accessible via `POST /api/auth/signup`. Processes client payload, interacts with MySQL via Prisma, and returns success/error JSON.
+- 🔄 **How it Works:** Accessible via `POST /api/auth/signup`. Processes client payload, interacts with PostgreSQL via Prisma, and returns success/error JSON.
 
 ---
 
