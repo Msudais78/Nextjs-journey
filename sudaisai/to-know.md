@@ -69,3 +69,11 @@ Attack / Vulnerability │ Fix Applied │
 # what is botnet?
 
 # what is bandwidth?
+
+# what is webfetch api? what are webfetch api standards?
+
+# what is tcp protocol?
+
+# what is ssl?
+
+# what is reverse proxy?
