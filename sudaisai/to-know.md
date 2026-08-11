@@ -77,3 +77,5 @@ Attack / Vulnerability │ Fix Applied │
 # what is ssl?
 
 # what is reverse proxy?
+
+# @map in prisma means what?

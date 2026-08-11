@@ -65,7 +65,7 @@ export async function POST(request: Request) {
       data: {
         email: email.toLowerCase().trim(),
         username: username.trim(),
-        password: hashedPassword,
+        passwordHash: hashedPassword,
       },
       select: {
         id: true,

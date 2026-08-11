@@ -1,17 +1,108 @@
+// ==============================================================================
+// PRISMA SCHEMA DEFINITION
+// ==============================================================================
+// Application Domain: Next.js Enterprise Authentication System
+// Target Database: MySQL
+// Reference Doc: https://www.prisma.io/docs/concepts/components/prisma-schema
+// ==============================================================================
+
+// ------------------------------------------------------------------------------
+// 1. GENERATOR CONFIGURATION
+// ------------------------------------------------------------------------------
+// Generates the Prisma Client JS package based on this schema definition.
+// Re-run `npx prisma generate` whenever models or attributes are altered.
 generator client {
     provider = "prisma-client-js"
 }
 
+// ------------------------------------------------------------------------------
+// 2. DATASOURCE CONFIGURATION
+// ------------------------------------------------------------------------------
+// Configures the database provider for Prisma Client.
+// Note (Prisma v7+): The database connection URL (`DATABASE_URL`) is defined in `prisma.config.ts`
+// rather than directly in `schema.prisma`.
 datasource db {
     provider = "mysql"
 }
 
-model User {
-    id    Int     @id @default(autoincrement())
-    email String  @unique
-    username String @unique
-    password String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+// ------------------------------------------------------------------------------
+// 3. ENUM DEFINITIONS
+// ------------------------------------------------------------------------------
+/// User Role enumeration for Access Control (RBAC)
+enum Role {
+    USER
+    ADMIN
 }
 
+// ------------------------------------------------------------------------------
+// 4. DATA MODELS
+// ------------------------------------------------------------------------------
+
+/// Model: PendingRegistration
+/// Purpose: Holds unverified user registrations during 2-Factor / OTP verification.
+/// Security Note: Passwords & OTPs are stored exclusively as secure cryptographic hashes.
+/// TTL Strategy: Stale records can be periodically purged using `otpExpiresAt`.
+model PendingRegistration {
+    /// Unique identifier generated using collision-resistant CUID (Collision-resistant Unique Identifier)
+    id String @id @default(cuid())
+
+    /// User's requested email address (must be unique across pending registrations)
+    email String @unique
+
+    /// User's requested username (must be unique across pending registrations)
+    username String @unique
+
+    /// Hashed account password (e.g. Bcrypt with cost factor 10-12 or Argon2id)
+    passwordHash String @map("password_hash")
+
+    /// Cryptographic hash of the 6-digit One-Time Password (OTP) sent to user's email
+    otpHash String @map("otp_hash")
+
+    /// Timestamp after which the OTP expires (used for TTL verification and database cleanup)
+    otpExpiresAt DateTime @map("otp_expires_at")
+
+    /// Counter for failed OTP entry attempts to enforce rate-limiting / brute-force protection
+    attempts Int @default(0)
+
+    /// Record creation timestamp managed automatically by database
+    createdAt DateTime @default(now()) @map("created_at")
+
+    // Note: `@unique` on `email` and `username` automatically creates unique database B-tree indexes.
+    // We index `otpExpiresAt` for fast batch-deletion of expired registration records.
+    @@index([otpExpiresAt], name: "idx_pending_reg_otp_expires_at")
+    @@map("pending_registrations")
+}
+
+/// Model: User
+/// Purpose: Core authenticated user entity within the application.
+/// Storage: Persists active accounts after successful OTP verification or direct registration.
+model User {
+    /// Primary key: Collision-resistant CUID (superior to auto-increment for distributed systems)
+    id String @id @default(cuid())
+
+    /// User's verified email address (indexed with unique constraint)
+    email String @unique
+
+    /// User's unique handle/username (indexed with unique constraint)
+    username String @unique
+
+    /// Hashed account password for secure authentication
+    passwordHash String @map("password_hash")
+
+    /// Indicates if email verification has been completed
+    isEmailVerified Boolean @default(true) @map("is_email_verified")
+
+    /// Role-based access control permission level
+    role Role @default(USER)
+
+    /// Account creation timestamp handled automatically by Prisma
+    createdAt DateTime @default(now()) @map("created_at")
+
+    /// Account modification timestamp automatically updated on any field mutation
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    // Database-level performance indexes
+    @@index([createdAt], name: "idx_users_created_at")
+    // Database table name mapping (follows SQL snake_case convention)
+    @@map("users")
+}
