@@ -1,3 +1,5 @@
+import { RE2JS } from 're2js';
+
 // ============================================================
 // CONSTANTS — single source of truth for all size limits
 // ============================================================
@@ -16,13 +18,26 @@ export const INPUT_LIMITS = {
 } as const;
 
 // ============================================================
+// COMPILED LINEAR-TIME REGEX PATTERNS (RE2JS - Guaranteed O(n))
+// ============================================================
+// Google RE2 algorithm guarantees linear-time execution, protecting against ReDoS attacks.
+const emailLinearRegex = RE2JS.compile('^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$');
+const usernameLinearRegex = RE2JS.compile('^[a-zA-Z0-9_-]+$');
+const usernameEdgeSpecialRegex = RE2JS.compile('^[-_]|[-_]$');
+
+const lowerCaseRegex = RE2JS.compile('[a-z]');
+const upperCaseRegex = RE2JS.compile('[A-Z]');
+const digitRegex = RE2JS.compile('\\d');
+const specialCharRegex = RE2JS.compile('[!@#$%^&*()_+\\-=\\[\\]{};\':"\\\\|,.<>\\/?]');
+
+// ============================================================
 // EMAIL VALIDATION
 // ============================================================
 
 /**
  * Validates that an input is a correctly formatted email address.
  * 
- * Performs string type check, length bounds check (RFC 5321), ReDoS-safe regex validation,
+ * Performs string type check, length bounds check (RFC 5321), linear-time RE2JS regex validation,
  * and structural checks (local part <= 64, domain <= 253, no consecutive dots, no leading/trailing dots).
  * 
  * @param email - Unknown input value to validate as email
@@ -35,9 +50,8 @@ export function isValidEmail(email: unknown): email is string {
   if (email.length < INPUT_LIMITS.EMAIL_MIN_LENGTH) return false;
   if (email.length > INPUT_LIMITS.EMAIL_MAX_LENGTH) return false;
 
-  // Simple, safe regex — avoid complex patterns vulnerable to ReDoS
-  const emailRegex = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
-  if (!emailRegex.test(email)) return false;
+  // Linear-time RE2JS regex evaluation — immune to catastrophic backtracking / ReDoS
+  if (!emailLinearRegex.testExact(email)) return false;
 
   // Additional structural checks
   const parts = email.split('@');
@@ -86,7 +100,7 @@ export function isValidPassword(password: unknown): password is string {
  * - Must contain at least one uppercase letter (`[A-Z]`)
  * - Must contain at least one numeric digit (`\d`)
  * - Must contain at least one special character
- * - Rejects single-character repetition patterns (e.g. "aaaaaaaaaa")
+ * - Rejects single-character repetition patterns (e.g. "aaaaaaaaaa") via O(n) string comparison
  * 
  * @param password - Unknown input value to validate
  * @returns `PasswordValidationResult` containing `valid` boolean and `errors` array
@@ -115,24 +129,26 @@ export function validatePasswordStrength(
     );
   }
 
-  if (!/[a-z]/.test(password)) {
+  if (!lowerCaseRegex.test(password)) {
     errors.push('Password must contain at least one lowercase letter.');
   }
 
-  if (!/[A-Z]/.test(password)) {
+  if (!upperCaseRegex.test(password)) {
     errors.push('Password must contain at least one uppercase letter.');
   }
 
-  if (!/\d/.test(password)) {
+  if (!digitRegex.test(password)) {
     errors.push('Password must contain at least one number.');
   }
 
-  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+  if (!specialCharRegex.test(password)) {
     errors.push('Password must contain at least one special character.');
   }
 
-  // Check for common weak patterns
-  if (/^(.)\1+$/.test(password)) {
+  // Check for common weak patterns (all same character, e.g. "aaaaaaaaaa")
+  // Note: Backreferences like \1 are non-regular and rejected by linear regex engines.
+  // We use an O(n) linear string check instead.
+  if (password.length > 1 && password.split('').every(c => c === password[0])) {
     errors.push('Password cannot be all the same character.');
   }
 
@@ -166,13 +182,11 @@ export function isValidUsername(username: unknown): username is string {
   if (username.length < INPUT_LIMITS.USERNAME_MIN_LENGTH) return false;
   if (username.length > INPUT_LIMITS.USERNAME_MAX_LENGTH) return false;
 
-  // Only allow alphanumeric, underscores, hyphens
-  // Prevents XSS, SQL injection characters, null bytes
-  const usernameRegex = /^[a-zA-Z0-9_-]+$/;
-  if (!usernameRegex.test(username)) return false;
+  // Linear-time RE2JS regex check — guaranteed O(n)
+  if (!usernameLinearRegex.testExact(username)) return false;
 
   // Cannot start or end with special chars
-  if (/^[-_]|[-_]$/.test(username)) return false;
+  if (usernameEdgeSpecialRegex.test(username)) return false;
 
   // Block null bytes explicitly
   if (username.includes('\0')) return false;

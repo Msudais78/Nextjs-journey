@@ -47,3 +47,25 @@ Attack / Vulnerability │ Fix Applied │
 │ Content-Type Smuggling │ Strict Content-Type: application/json enforcement │
 │ Weak Passwords │ 10+ chars, upper+lower+number+special required │
 │ Privilege Leakage │ select{} whitelist — never return password hash │
+
+# what is nextrequest and nextresponse?
+
+# what is webfetch api standard? what is req and res in webfetch?
+
+# what is ipv4 and ipv6?
+
+# ip header spoofing?
+
+# how to prevent ip header spoofing?
+
+# what is nonderterministic finite automaton?
+
+# what is linter?
+
+# what is edge computing?
+
+# what is edge runtime?
+
+# what is botnet?
+
+# what is bandwidth?

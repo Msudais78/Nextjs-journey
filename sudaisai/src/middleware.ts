@@ -8,6 +8,15 @@
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { RE2JS } from 're2js';
+
+// Pre-compiled linear-time RE2JS regex instances for IP validation (O(n) guaranteed execution)
+const ipv4LinearRegex = RE2JS.compile(
+  '^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
+);
+const ipv6LinearRegex = RE2JS.compile(
+  '^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^::1$|^::$|^([0-9a-fA-F]{1,4}:){1,7}:$'
+);
 
 // ==============================================================================
 // 1. IN-MEMORY RATE LIMIT STORE
@@ -32,22 +41,14 @@ const RATE_LIMIT_CONFIG = {
 // 3. IP ADDRESS VALIDATION HELPER
 // ==============================================================================
 /**
- * Validates whether a string is a valid IPv4 or IPv6 address.
- * Prevents IP spoofing, malformed header injection, and regex bypasses.
+ * Validates whether a string is a valid IPv4 or IPv6 address using linear-time RE2JS patterns.
+ * Prevents IP spoofing, malformed header injection, and ReDoS attack vectors.
  * 
  * @param ip - String to validate
  * @returns boolean - True if valid IPv4 or IPv6 address
  */
 function isValidIP(ip: string): boolean {
-  // Strict IPv4 validation regex enforcing each octet to be in range 0 - 255
-  const ipv4Regex =
-    /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-
-  // Robust IPv6 validation regex matching standard hex groups and compressed format (::)
-  const ipv6Regex =
-    /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^::1$|^::$|^([0-9a-fA-F]{1,4}:){1,7}:$/;
-
-  return ipv4Regex.test(ip) || ipv6Regex.test(ip);
+  return ipv4LinearRegex.testExact(ip) || ipv6LinearRegex.testExact(ip);
 }
 
 // ==============================================================================

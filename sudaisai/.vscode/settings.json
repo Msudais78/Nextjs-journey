@@ -1,0 +1,20 @@
+{
+  "editor.tokenColorCustomizations": {
+    "comments": "#2DD4BF",
+    "textMateRules": [
+      {
+        "scope": [
+          "comment",
+          "comment.line",
+          "comment.block",
+          "comment.block.documentation",
+          "punctuation.definition.comment"
+        ],
+        "settings": {
+          "foreground": "#2DD4BF",
+          "fontStyle": "italic"
+        }
+      }
+    ]
+  }
+}

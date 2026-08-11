@@ -205,10 +205,10 @@ Welcome to the complete, file-by-file documentation for the **sudaisai** project
 - 🎯 **Why it Exists:** Intercepts incoming HTTP requests at the edge/server level before reaching API route handlers.
 - 📄 **What it Contains:**
   1. `middleware(request: NextRequest)` default export handler and `config.matcher` targeting `/api/auth/signup`.
-  2. Client IP extraction & strict IPv4/IPv6 validation (`getClientIP`, `isValidIP`).
+  2. Client IP extraction & linear-time `RE2JS` IPv4/IPv6 validation (`getClientIP`, `isValidIP`, `ipv4LinearRegex`, `ipv6LinearRegex`).
   3. IP rate limiting evaluation (`rateLimit`) enforcing max 5 requests per 15-minute window with a 1-hour block penalty on violation.
   4. Returns HTTP 429 Too Many Requests JSON response with `Retry-After` and `X-RateLimit-*` headers on violation.
-- ⚙️ **Function & Purpose:** Protects sensitive endpoints against brute-force attacks, resource exhaustion, and automated credential stuffing.
+- ⚙️ **Function & Purpose:** Protects sensitive endpoints against brute-force attacks, resource exhaustion, ReDoS vectors, and automated credential stuffing.
 - 🔄 **How it Works:** Executed automatically by Next.js request pipeline on matched routes before delegating to route handlers.
 
 ---
@@ -306,16 +306,16 @@ Welcome to the complete, file-by-file documentation for the **sudaisai** project
 ---
 
 ### 6.2 [src/utils/validation.ts](file:///e:/project/sudaisai/src/utils/validation.ts)
-- 🎯 **Why it Exists:** Centralizes input validation rules, sanitization utilities, constant size limits, and security helper functions across the application.
+- 🎯 **Why it Exists:** Centralizes input validation rules, sanitization utilities, constant size limits, and security helper functions across the application. Uses `re2js` linear-time regex engine for ReDoS protection.
 - 📄 **Exports & Function Specifications:**
   - **`INPUT_LIMITS`** *(Constant object)*: Single source of truth defining strict min/max size limits for inputs (`EMAIL_MIN_LENGTH`: 5, `EMAIL_MAX_LENGTH`: 254, `USERNAME_MIN_LENGTH`: 3, `USERNAME_MAX_LENGTH`: 30, `PASSWORD_MIN_LENGTH`: 10, `PASSWORD_MAX_LENGTH`: 128, `REQUEST_BODY_MAX_BYTES`: 4096).
-  - **`isValidEmail(email: unknown): email is string`**: Type-guard function checking email format. Enforces RFC 5321 length limits, ReDoS-safe regex matching (`/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/`), and structural constraints (local <= 64, domain <= 253, no consecutive or leading/trailing dots).
+  - **`isValidEmail(email: unknown): email is string`**: Type-guard function checking email format. Enforces RFC 5321 length limits, linear-time `RE2JS` regex matching (`emailLinearRegex`), and structural constraints (local <= 64, domain <= 253, no consecutive or leading/trailing dots).
   - **`isValidPassword(password: unknown): password is string`**: Type-guard wrapper that delegates to `validatePasswordStrength` and returns a simple `boolean`.
-  - **`validatePasswordStrength(password: unknown): PasswordValidationResult`**: Evaluates password against security rules and returns `{ valid: boolean, errors: string[] }`. Enforces max length FIRST (<= 128 chars) to mitigate bcrypt Denial of Service (DoS), min length (>= 10 chars), lowercase, uppercase, numeric digit, special character, and blocks single-character repetition (e.g. `"aaaaaaaaaa"`).
-  - **`isValidUsername(username: unknown): username is string`**: Type-guard validating username formatting. Requires 3-30 characters, alphanumeric/underscore/hyphen characters (`/^[a-zA-Z0-9_-]+$/`), forbids leading/trailing hyphens or underscores, and explicitly rejects null bytes (`\0`).
+  - **`validatePasswordStrength(password: unknown): PasswordValidationResult`**: Evaluates password against security rules and returns `{ valid: boolean, errors: string[] }`. Enforces max length FIRST (<= 128 chars) to mitigate bcrypt Denial of Service (DoS), min length (>= 10 chars), lowercase, uppercase, numeric digit, special character via `RE2JS` patterns, and blocks single-character repetition (e.g. `"aaaaaaaaaa"`) using an $O(n)$ string loop (replacing non-regular regex backreferences).
+  - **`isValidUsername(username: unknown): username is string`**: Type-guard validating username formatting. Requires 3-30 characters, linear-time `RE2JS` regex validation (`usernameLinearRegex`), forbids leading/trailing hyphens or underscores (`usernameEdgeSpecialRegex`), and explicitly rejects null bytes (`\0`).
   - **`sanitizeString(input: string): string`**: Sanitizes string inputs by stripping null bytes (`\0`), ASCII control characters (`[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]`), and whitespace trimming.
   - **`safeCompare(a: string, b: string): boolean`**: Performs a constant-time bitwise string comparison to prevent timing side-channel attacks when checking secret tokens, hashes, or credentials.
-- ⚙️ **Function & Purpose:** Ensures strict zero-trust input validation, sanitization against XSS/injection, timing attack resistance, and bcrypt DoS protection across all API routes and client input fields.
+- ⚙️ **Function & Purpose:** Ensures strict zero-trust input validation, sanitization against XSS/injection, timing attack resistance, ReDoS protection via `re2js` linear-time evaluation, and bcrypt DoS protection across all API routes and client input fields.
 - 🔄 **How it Works:** Imported by server API routes (such as `src/app/api/auth/signup/route.ts`) and frontend interactive forms to validate and sanitize user inputs before processing or database mutations.
 
 ---
