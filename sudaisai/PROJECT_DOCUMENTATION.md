@@ -78,6 +78,22 @@ Welcome to the complete, file-by-file documentation for the **sudaisai** project
 
 ---
 
+### 1.10 [tsconfig.tsbuildinfo](file:///e:/project/sudaisai/tsconfig.tsbuildinfo)
+- 🎯 **Why it Exists:** Generated build metadata file created when incremental compilation (`"incremental": true` or `"composite": true`) is enabled in `tsconfig.json`.
+- 📄 **What it Contains:** Internal compiler build state, project graph, declaration file hashes, and type check caches.
+- ⚙️ **Function & Purpose:** Speeds up subsequent TypeScript compilation cycles (`tsc` or `next build`) by reusing prior build evaluations.
+- 🔄 **How it Works:** Automatically read and updated by the TypeScript compiler on every build execution.
+
+---
+
+### 1.11 [.vscode/settings.json](file:///e:/project/sudaisai/.vscode/settings.json)
+- 🎯 **Why it Exists:** Workspace-specific VS Code configuration file.
+- 📄 **What it Contains:** `editor.tokenColorCustomizations` defining teal foreground styling (`#2DD4BF`) and italic font styles for code comments across TypeScript/JavaScript files.
+- ⚙️ **Function & Purpose:** Standardizes comment syntax highlighting across developer IDE environments for enhanced code readability.
+- 🔄 **How it Works:** Automatically applied by VS Code when opening the workspace directory.
+
+---
+
 ## 📌 2. AI & Agent Guidelines
 
 ### 2.1 [AGENTS.md](file:///e:/project/sudaisai/AGENTS.md)
@@ -117,6 +133,22 @@ Welcome to the complete, file-by-file documentation for the **sudaisai** project
 - 📄 **What it Contains:** Getting started instructions, build scripts, stack details, and Next.js links.
 - ⚙️ **Function & Purpose:** Onboards developers to run and test the application.
 - 🔄 **How it Works:** Displayed on GitHub project homepage.
+
+---
+
+### 2.6 [to-know.md](file:///e:/project/sudaisai/to-know.md)
+- 🎯 **Why it Exists:** Project security reference guide and technical knowledge repository.
+- 📄 **What it Contains:** 15 cyber security attack vectors and their explicit mitigation strategy matrix (SQL Injection, Bcrypt DoS, Rate Limiting, Timing Attack dummy hashes, ReDoS protection via RE2JS, Null Byte Stripping, Type Confusion guards), along with reference concepts on NextRequest/NextResponse, WebFetch API, Edge Runtime, and TCP/SSL networking protocols.
+- ⚙️ **Function & Purpose:** Serves as the authoritative architectural security compliance checklist and knowledge base for developers working on authentication and API routes.
+- 🔄 **How it Works:** Referenced during security audits, code reviews, and API endpoint implementation.
+
+---
+
+### 2.7 Agent Skills Packages (`.agents/skills/`, `.claude/skills/`, `.windsurf/skills/`)
+- 🎯 **Why it Exists:** Custom AI agent skill packages for database operations and agent framework integration.
+- 📄 **What it Contains:** 9 modular Prisma skill packages (`prisma-cli`, `prisma-client-api`, `prisma-compute`, `prisma-database-setup`, `prisma-driver-adapter-implementation`, `prisma-mongodb-upgrade`, `prisma-postgres`, `prisma-postgres-setup`, `prisma-upgrade-v7`) and editor tool link definitions.
+- ⚙️ **Function & Purpose:** Extends AI coding assistants (Antigravity, Claude CLI, Windsurf) with specialized domain knowledge for Prisma v7 migrations, database setup, and driver adapter workflows.
+- 🔄 **How it Works:** Loaded dynamically by AI agents when performing database schema modifications, driver setups, or framework upgrades.
 
 ---
 
@@ -226,7 +258,7 @@ Welcome to the complete, file-by-file documentation for the **sudaisai** project
 
 ---
 
-### 4.5 [src/middleware.ts](file:///e:/project/sudaisai/src/middleware.ts)
+### 4.6 [src/middleware.ts](file:///e:/project/sudaisai/src/middleware.ts)
 - 🎯 **Why it Exists:** Intercepts incoming HTTP requests at the edge/server level before reaching API route handlers.
 - 📄 **What it Contains:**
   1. `middleware(request: NextRequest)` default export handler and `config.matcher` targeting `/api/auth/signup`.
