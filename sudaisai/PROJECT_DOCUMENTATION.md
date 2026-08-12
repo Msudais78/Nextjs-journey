@@ -176,23 +176,19 @@ Welcome to the complete, file-by-file documentation for the **sudaisai** project
 ---
 
 ### 3.3 [prisma/prisma.ts](file:///e:/project/sudaisai/prisma/prisma.ts)
-- 🎯 **Why it Exists:** Implements a global singleton pattern for the `PrismaClient` using TypeScript global declarations.
-- 📄 **What it Contains:**
-  ```typescript
-  declare global { var prisma: PrismaClient | undefined; }
-  export const prisma = global.prisma || new PrismaClient();
-  if (process.env.NODE_ENV !== 'production') global.prisma = prisma;
-  ```
-- ⚙️ **Function & Purpose:** Prevents database connection pool exhaustion in Next.js development mode during Hot Module Reloading (HMR).
-- 🔄 **How it Works:** Stores the `PrismaClient` instance on `global.prisma` in development, reusing the same instance across file saves.
+- 🎯 **Why it Exists:** Implements a global singleton pattern for the `PrismaClient` using `PrismaMariaDb` driver adapter required in Prisma 7+.
+- 📄 **What it Contains:** Instantiates `PrismaMariaDb` adapter with `process.env.DATABASE_URL` and attaches `PrismaClient` to `global.prisma`.
+- ⚙️ **Function & Purpose:** Prevents database connection pool exhaustion in Next.js development mode during Hot Module Reloading (HMR) while enforcing Prisma 7 driver adapter compliance.
+- 🔄 **How it Works:** Reuses the existing client instance in development across file saves.
 
 ---
 
 ### 3.4 [src/utils/prisma.ts](file:///e:/project/sudaisai/src/utils/prisma.ts)
-- 🎯 **Why it Exists:** Alternative application-level export for the Prisma database client instance using `globalThis` casting.
-- 📄 **What it Contains:** Standard `globalThis` singleton check exporting default `prisma`.
-- ⚙️ **Function & Purpose:** Provides clean, alias-compatible access (`import prisma from '@/utils/prisma'`) for API routes and server actions.
-- 🔄 **How it Works:** Imported directly by API endpoints (such as `src/app/api/auth/signup/route.ts`) to execute database queries.
+- 🎯 **Why it Exists:** Application-level export for the Prisma database client instance initialized with `PrismaMariaDb` driver adapter.
+- 📄 **What it Contains:** Singleton `createPrismaClient()` helper instantiating `PrismaClient({ adapter: new PrismaMariaDb(...) })`.
+- ⚙️ **Function & Purpose:** Provides type-safe, alias-compatible database access (`import prisma from '@/utils/prisma'`) for Next.js App Router API routes and server actions.
+- 🔄 **How it Works:** Imported directly by API endpoints (such as `src/app/api/auth/signup/route.ts` and `verify-otp/route.ts`) to execute database queries.
+
 
 ---
 
