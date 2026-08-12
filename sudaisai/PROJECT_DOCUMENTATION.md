@@ -197,10 +197,11 @@ Welcome to the complete, file-by-file documentation for the **sudaisai** project
 ---
 
 ### 3.5 [src/utils/email.ts](file:///e:/project/sudaisai/src/utils/email.ts)
-- 🎯 **Why it Exists:** Provides email dispatch utility functions using Nodemailer for sending OTP verification codes.
-- 📄 **What it Contains:** `sendOTPEmail(toEmail, otp)` function configuring SMTP transports (`process.env.SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`) and generating responsive HTML verification email templates.
-- ⚙️ **Function & Purpose:** Sends 6-digit OTP codes for account verification with a dev-mode console fallback when SMTP is unconfigured.
+- 🎯 **Why it Exists:** Provides email dispatch utility functions using Brevo Transactional Email API (`@getbrevo/brevo`) and Nodemailer for sending OTP verification codes.
+- 📄 **What it Contains:** `sendOTPEmail(toEmail, otp)` function authenticating with `process.env.SMTP_API_KEY` via Brevo SDK / REST API, generating responsive HTML verification email templates, and providing fallback support for standard SMTP and dev-mode console logging.
+- ⚙️ **Function & Purpose:** Sends 6-digit OTP codes for account verification using Brevo's cloud email infrastructure.
 - 🔄 **How it Works:** Called by `POST /api/auth/signup` to dispatch verification codes to users during registration.
+
 
 ---
 

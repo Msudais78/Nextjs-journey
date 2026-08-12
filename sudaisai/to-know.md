@@ -79,3 +79,11 @@ Attack / Vulnerability │ Fix Applied │
 # what is reverse proxy?
 
 # @map in prisma means what?
+
+# what is ip?
+
+# type assertion in typescript?
+
+# what is nginx
+
+# what is proxy? what is forward proxy? what is reverse proxy?
