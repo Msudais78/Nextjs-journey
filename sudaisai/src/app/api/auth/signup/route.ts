@@ -1,175 +1,161 @@
-/**
- * @file src/app/api/auth/signup/route.ts
- * @description Backend HTTP POST API endpoint for initiating 2-step user registration.
- * Performs strict input validation, sanitization, rate limiting, anti-enumeration,
- * bcrypt DoS/ReDoS/timing attack mitigations, pending registration record persistence,
- * and 6-digit OTP email dispatch.
- */
+// src/app/api/auth/signup/route.ts
+// Step 1 of registration: Validate inputs, save pending record, send OTP
+// Returns a JWT token that is REQUIRED for the verify-otp step
 
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import prisma from '@/utils/prisma';
-import { 
-  isValidEmail, 
-  isValidUsername, 
-  validatePasswordStrength, 
+import {
+  isValidEmail,
+  isValidUsername,
+  validatePasswordStrength,
   sanitizeString,
-  INPUT_LIMITS 
+  INPUT_LIMITS,
 } from '@/utils/validation';
-import { rateLimit } from '@/middleware';
 import { sendOTPEmail } from '@/utils/email';
+import { createOTPToken } from '@/utils/jwt';
+import { errorResponse, parseJsonBody } from '@/utils/api-helpers';
 
-/**
- * Security & Expiration Constants
- * - OTP_EXPIRY_MINUTES: TTL duration for the 6-digit verification code (10 minutes).
- * - BCRYPT_ROUNDS: Work factor for bcrypt hashing (12 rounds balances security and CPU usage).
- */
+// How long OTP is valid in minutes
 const OTP_EXPIRY_MINUTES = 10;
+
+// bcrypt work factor - 12 is good balance of security vs speed
+// Higher = slower = harder to brute force
 const BCRYPT_ROUNDS = 12;
 
-/**
- * Handles incoming POST requests to initiate user registration.
- *
- * @param request - The incoming HTTP Request object containing email, username, and password JSON payload.
- * @returns NextResponse JSON object with success/error status and user feedback message.
- */
 export async function POST(request: Request) {
-  // 1. IP-based Rate Limiting: Max 3 signup attempts per 15-minute window per IP to prevent OTP spam & brute force
-  const ip = getClientIP(request);
-  const limit = rateLimit(ip, { windowMs: 15 * 60 * 1000, maxRequests: 3, prefix: 'signup-otp' });
-  if (!limit.allowed) {
-    return errorResponse('Too many requests. Please try again later.', 429);
-  }
+  // ─── Step 2: Parse Request Body ────────────────────────────────────────────
+  // Using shared utility - no code duplication
+  const { body, error: parseError } = await parseJsonBody(
+    request,
+    INPUT_LIMITS.REQUEST_BODY_MAX_BYTES
+  );
 
-  // 2. Content-Type Header Check: Enforce strict application/json content type to prevent request smuggling
-  if (!request.headers.get('content-type')?.includes('application/json')) {
-    return errorResponse('Invalid content type', 415);
-  }
-
-  // 3. Payload Size Limitation & JSON Parsing: Read raw text first and reject if payload exceeds 4KB to block DoS
-  let body: any;
-  try {
-    const text = await request.text();
-    if (text.length > INPUT_LIMITS.REQUEST_BODY_MAX_BYTES) {
-      return errorResponse('Payload too large', 413);
-    }
-    body = JSON.parse(text);
-  } catch {
-    return errorResponse('Invalid JSON', 400);
-  }
+  if (parseError) return parseError;
 
   const { email, username, password } = body;
 
-  // 4. Type & Presence Safety Check: Ensure required fields exist and are strict primitives (mitigates Type Confusion)
-  if (typeof email !== 'string' || typeof username !== 'string' || typeof password !== 'string') {
-    return errorResponse('Email, username, and password are required.', 400);
+  // ─── Step 3: Type Safety Check ─────────────────────────────────────────────
+  // Ensures we actually received strings, not objects or arrays (type confusion attacks)
+  if (
+    typeof email !== 'string' ||
+    typeof username !== 'string' ||
+    typeof password !== 'string'
+  ) {
+    return errorResponse('Email, username, and password must be strings.', 400);
   }
 
-  // 5. Input Sanitization: Strip null bytes, ASCII control characters, leading/trailing whitespace, and normalize email case
+  // ─── Step 4: Sanitize Inputs ───────────────────────────────────────────────
+  // Remove dangerous characters before any processing
   const sanitizedEmail = sanitizeString(email).toLowerCase();
   const sanitizedUsername = sanitizeString(username);
 
-  // 6. Explicit Null Byte Check on Password: Block null byte injection attacks in password processing
+  // Block null bytes specifically in password (bcrypt can mishandle these)
   if (password.includes('\0')) {
-    return errorResponse('Invalid input', 400);
+    return errorResponse('Invalid characters in password.', 400);
   }
 
-  // 7. Security Input Validations (RFC 5321 email limits, linear-time RE2JS regexes, password complexity rules)
+  // ─── Step 5: Format Validation ─────────────────────────────────────────────
   if (!isValidEmail(sanitizedEmail)) {
-    return errorResponse('Please provide a valid email address.', 400);
+    return errorResponse('Please enter a valid email address.', 400);
   }
+
   if (!isValidUsername(sanitizedUsername)) {
-    return errorResponse('Invalid username. Must be 3-30 alphanumeric characters.', 400);
+    return errorResponse(
+      'Username must be 3-30 characters, letters and numbers only.',
+      400
+    );
   }
 
-  const pwdCheck = validatePasswordStrength(password);
-  if (!pwdCheck.valid) {
-    return NextResponse.json({ error: 'Weak password', details: pwdCheck.errors }, { status: 400 });
+  const passwordCheck = validatePasswordStrength(password);
+  if (!passwordCheck.valid) {
+    return NextResponse.json(
+      { error: 'Password is too weak.', details: passwordCheck.errors },
+      { status: 400 }
+    );
   }
 
+  // ─── Step 6: Database Operations ───────────────────────────────────────────
   try {
-    // 8. User Existence Check: Query persistent database for existing email or username
+    // Check if email or username is already taken by a REAL user
     const existingUser = await prisma.user.findFirst({
-      where: { OR: [{ email: sanitizedEmail }, { username: sanitizedUsername }] },
+      where: {
+        OR: [
+          { email: sanitizedEmail },
+          { username: sanitizedUsername },
+        ],
+      },
     });
 
-    // 9. Account Enumeration & Timing Attack Defense:
-    // If user exists, execute dummy bcrypt hash calculation to match response timing latency,
-    // and return generic message so attackers cannot enumerate valid registered accounts.
     if (existingUser) {
+      // IMPORTANT: We still hash to prevent timing attacks
+      // Without this, attackers could tell if an account exists
+      // by measuring how fast the response comes back
       await bcrypt.hash(password, BCRYPT_ROUNDS);
+
+      // Generic message - don't tell them if email or username was the problem
       return NextResponse.json(
-        { message: 'If the details are valid, an OTP has been sent to your email.' },
+        { message: 'If these details are available, an OTP will be sent to your email.' },
         { status: 200 }
       );
     }
 
-    // 10. Check for existing pending registration record for this email
-    const existingPending = await prisma.pendingRegistration.findUnique({
+    // Hash the password BEFORE storing in pending table
+    // We never store plain text passwords anywhere
+    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+
+    // Generate 6-digit OTP using cryptographically secure random number
+    // crypto.randomInt is better than Math.random() for security
+    const otp = crypto.randomInt(100000, 999999).toString();
+
+    // Hash the OTP too - if database is breached, OTPs are still protected
+    const otpHash = await bcrypt.hash(otp, 10);
+
+    // Set expiry time
+    const otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+
+    // Upsert = Update if exists, Insert if not
+    // Handles case where user retries signup with same email
+    await prisma.pendingRegistration.upsert({
       where: { email: sanitizedEmail },
+      update: {
+        // If they're retrying, update everything with fresh values
+        username: sanitizedUsername,
+        passwordHash,
+        otpHash,
+        otpExpiresAt,
+      },
+      create: {
+        // First time signup
+        email: sanitizedEmail,
+        username: sanitizedUsername,
+        passwordHash,
+        otpHash,
+        otpExpiresAt,
+      },
     });
 
-    // 11. Generate Cryptographically Secure 6-Digit OTP & Hashes
-    const otp = crypto.randomInt(100000, 999999).toString();
-    const otpHash = await bcrypt.hash(otp, 10);
-    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
-    const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
-
-    // 12. Database Upsert: Update existing pending record or insert a new PendingRegistration record
-    if (existingPending) {
-      await prisma.pendingRegistration.update({
-        where: { email: sanitizedEmail },
-        data: {
-          username: sanitizedUsername,
-          passwordHash,
-          otpHash,
-          otpExpiresAt: expiresAt,
-          attempts: 0,
-        },
-      });
-    } else {
-      await prisma.pendingRegistration.create({
-        data: {
-          email: sanitizedEmail,
-          username: sanitizedUsername,
-          passwordHash,
-          otpHash,
-          otpExpiresAt: expiresAt,
-        },
-      });
-    }
-
-    // 13. Dispatch Email: Send 6-digit OTP verification email via Nodemailer transport
+    // Send OTP email BEFORE creating JWT
+    // If email fails, we haven't given them a token yet
     await sendOTPEmail(sanitizedEmail, otp);
 
+    // Create JWT token containing the email
+    // Frontend MUST send this token with the OTP verification request
+    // This proves they went through the signup form first
+    const otpToken = createOTPToken(sanitizedEmail);
+
     return NextResponse.json(
-      { message: 'OTP sent to your email. Please verify your OTP to complete registration.' },
+      {
+        message: 'OTP sent to your email. You have 10 minutes to verify.',
+        // Frontend stores this token and sends it with /verify-otp request
+        otpToken,
+      },
       { status: 200 }
     );
+
   } catch (error) {
-    console.error('Send OTP error:', error);
-    return errorResponse('An unexpected error occurred during signup.', 500);
+    console.error('[signup] Unexpected error:', error);
+    return errorResponse('An unexpected error occurred. Please try again.', 500);
   }
-}
-
-/**
- * Formats a standardized JSON error response object.
- *
- * @param message - Descriptive human-readable error string.
- * @param status - HTTP status code.
- * @returns NextResponse JSON response object.
- */
-function errorResponse(message: string, status: number) {
-  return NextResponse.json({ error: message }, { status });
-}
-
-/**
- * Extracts the client IP address from request headers with local fallback.
- *
- * @param request - Incoming HTTP Request object.
- * @returns Client IP address string.
- */
-function getClientIP(request: Request): string {
-  return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '127.0.0.1';
 }

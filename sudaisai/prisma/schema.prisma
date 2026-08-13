@@ -61,9 +61,6 @@ model PendingRegistration {
     /// Timestamp after which the OTP expires (used for TTL verification and database cleanup)
     otpExpiresAt DateTime @map("otp_expires_at")
 
-    /// Counter for failed OTP entry attempts to enforce rate-limiting / brute-force protection
-    attempts Int @default(0)
-
     /// Record creation timestamp managed automatically by database
     createdAt DateTime @default(now()) @map("created_at")
 
