@@ -7,18 +7,18 @@
 // - Only needs: the OTP code + the JWT token
 // - If OTP matches → creates real User account → deletes pending record
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
 import prisma from '@/utils/prisma';
 import { sanitizeString, INPUT_LIMITS } from '@/utils/validation';
 import { verifyOTPToken, extractBearerToken } from '@/utils/jwt';
 import { errorResponse, parseJsonBody } from '@/utils/api-helpers';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   // ─── Step 2: Extract & Verify JWT Token ────────────────────────────────────
   // This is the GATE that prevents direct access to this endpoint
   // Without a valid JWT from the signup step, you cannot proceed
-  const rawToken = extractBearerToken(request);
+  const rawToken = request.cookies.get('otpToken')?.value || extractBearerToken(request);
 
   if (!rawToken) {
     // They tried to call verify-otp without going through signup first
@@ -137,12 +137,17 @@ export async function POST(request: Request) {
     });
 
     // ─── Step 10: Return Success ──────────────────────────────────────────────
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         message: 'Email verified successfully! Your account has been created.',
       },
       { status: 201 } // 201 Created - a new resource was created
     );
+
+    // Clean up the OTP cookie since the registration is complete
+    response.cookies.delete('otpToken');
+
+    return response;
 
   } catch (error) {
     console.error('[verify-otp] Unexpected error:', error);

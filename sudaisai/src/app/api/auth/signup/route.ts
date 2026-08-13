@@ -145,14 +145,23 @@ export async function POST(request: Request) {
     // This proves they went through the signup form first
     const otpToken = createOTPToken(sanitizedEmail);
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         message: 'OTP sent to your email. You have 10 minutes to verify.',
-        // Frontend stores this token and sends it with /verify-otp request
-        otpToken,
       },
       { status: 200 }
     );
+
+    // Store the JWT in an HTTP-only cookie for enhanced security
+    response.cookies.set('otpToken', otpToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 10 * 60, // 10 minutes (matches OTP expiry)
+      path: '/',
+    });
+
+    return response;
 
   } catch (error) {
     console.error('[signup] Unexpected error:', error);
