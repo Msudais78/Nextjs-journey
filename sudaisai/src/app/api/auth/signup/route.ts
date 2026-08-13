@@ -36,6 +36,10 @@ export async function POST(request: Request) {
 
   const { email, username, password } = body;
 
+  if (!email || !username || !password) {
+    return errorResponse('Email, username, and password are required.', 400);
+  }
+
   // ─── Step 3: Type Safety Check ─────────────────────────────────────────────
   // Ensures we actually received strings, not objects or arrays (type confusion attacks)
   if (
