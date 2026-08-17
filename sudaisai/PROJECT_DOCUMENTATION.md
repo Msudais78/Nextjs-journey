@@ -215,9 +215,9 @@ Welcome to the complete, file-by-file documentation for the **sudaisai** project
 
 ### 3.5 [src/utils/email.ts](file:///e:/project/sudaisai/src/utils/email.ts)
 
-- 🎯 **Why it Exists:** Provides email dispatch utility functions using the MailerSend API for sending OTP verification codes.
-- 📄 **What it Contains:** `sendOTPEmail(toEmail, otp)` function authenticating with `process.env.MAILERSEND_API_KEY` via the MailerSend SDK, generating HTML verification email templates, and providing fallback support for dev-mode console logging.
-- ⚙️ **Function & Purpose:** Sends 6-digit OTP codes for account verification using MailerSend's cloud email infrastructure.
+- 🎯 **Why it Exists:** Provides email dispatch utility functions using Nodemailer and Gmail for sending OTP verification codes.
+- 📄 **What it Contains:** `sendOTPEmail(toEmail, otp)` function authenticating with a provided Gmail account and App Password, generating HTML verification email templates.
+- ⚙️ **Function & Purpose:** Sends 6-digit OTP codes for account verification using Gmail's SMTP infrastructure.
 - 🔄 **How it Works:** Called by `POST /api/auth/signup` to dispatch verification codes to users during registration.
 
 ---

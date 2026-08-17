@@ -13,11 +13,71 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function AuthPage() {
+  const router = useRouter();
+  
   const [isLogin, setIsLogin] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Form states
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [errorDetails, setErrorDetails] = useState<string[]>([]);
+  const [successMsg, setSuccessMsg] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setErrorDetails([]);
+    setSuccessMsg('');
+
+    if (!isLogin) {
+      if (password !== confirmPassword) {
+        setErrorMsg('Passwords do not match');
+        return;
+      }
+      
+      setIsLoading(true);
+      try {
+        const response = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, email, password }),
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          setErrorMsg(data.error || data.message || 'Something went wrong');
+          if (data.details && Array.isArray(data.details)) {
+            setErrorDetails(data.details);
+          }
+          setIsLoading(false);
+          return;
+        }
+
+        // Success - show message and redirect to OTP verification after delay
+        setSuccessMsg(data.message || 'Success! Redirecting to verification...');
+        setTimeout(() => {
+          router.push(`/auth/verify-otp?email=${encodeURIComponent(email)}`);
+        }, 2000);
+      } catch (error) {
+        setErrorMsg('Network error. Please try again.');
+        setIsLoading(false);
+      }
+    } else {
+      // Login logic placeholder
+      setIsLoading(true);
+      setTimeout(() => setIsLoading(false), 1000);
+    }
+  };
 
   return (
     <div className="min-h-screen flex w-full bg-white text-black">
@@ -58,13 +118,42 @@ export default function AuthPage() {
         </div>
 
         {/* Form Fields */}
-        <form className="w-full max-w-sm space-y-3" onSubmit={(e) => e.preventDefault()}>
+        <form className="w-full max-w-sm space-y-3" onSubmit={handleSubmit}>
+          {errorMsg && (
+            <div className="bg-black text-white text-sm p-4 rounded-md border border-gray-800 flex items-start gap-3 shadow-lg animate-in fade-in slide-in-from-top-2 duration-300">
+              <svg className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div className="flex flex-col">
+                <span className="font-semibold">{errorMsg}</span>
+                {errorDetails.length > 0 && (
+                  <ul className="list-disc list-inside mt-2 space-y-1 text-xs text-gray-400">
+                    {errorDetails.map((detail, idx) => (
+                      <li key={idx}>{detail}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          )}
+
+          {successMsg && (
+            <div className="bg-black text-white text-sm p-4 rounded-md border border-gray-800 flex items-start gap-3 shadow-lg animate-in fade-in slide-in-from-top-2 duration-300">
+              <svg className="w-5 h-5 flex-shrink-0 mt-0.5 text-[#FDE047]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="font-semibold text-gray-100">{successMsg}</span>
+            </div>
+          )}
+          
           {!isLogin && (
             <div className="space-y-1">
               <label className="text-sm font-medium text-gray-700">Username <span className="text-red-500">*</span></label>
               <input
                 type="text"
                 placeholder="Enter your username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="w-full bg-gray-100 border-none rounded-md px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400 outline-none"
                 required={!isLogin}
               />
@@ -76,6 +165,8 @@ export default function AuthPage() {
             <input
               type="email"
               placeholder="name@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-gray-100 border-none rounded-md px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400 outline-none"
               required
             />
@@ -87,6 +178,8 @@ export default function AuthPage() {
               <input
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-gray-100 border-none rounded-md px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400 outline-none pr-10"
                 required
               />
@@ -117,6 +210,8 @@ export default function AuthPage() {
                 <input
                   type={showConfirmPassword ? "text" : "password"}
                   placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full bg-gray-100 border-none rounded-md px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400 outline-none pr-10"
                   required={!isLogin}
                 />
@@ -153,9 +248,10 @@ export default function AuthPage() {
 
           <button
             type="submit"
-            className="w-full bg-[#FDE047] hover:bg-[#FACC15] text-black font-semibold py-2.5 rounded-md mt-4 transition-colors duration-300"
+            disabled={isLoading}
+            className={`w-full bg-[#FDE047] hover:bg-[#FACC15] text-black font-semibold py-2.5 rounded-md mt-4 transition-colors duration-300 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
-            {isLogin ? 'Log In' : 'Sign Up'}
+            {isLoading ? 'Processing...' : (isLogin ? 'Log In' : 'Sign Up')}
           </button>
         </form>
 

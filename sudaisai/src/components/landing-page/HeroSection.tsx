@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useVideoPlayer } from '@/utils/constants';
 
 export default function HeroSection() {
@@ -44,10 +45,10 @@ export default function HeroSection() {
 
           {/* CTAs */}
           <div className="flex flex-wrap items-center gap-4">
-            <button className="bg-black hover:bg-gray-800 text-white font-bold text-xs uppercase tracking-wider px-7 py-4 rounded-full flex items-center gap-3 shadow-xl shadow-black/10 transition-all hover:scale-[1.02] active:scale-95">
+            <Link href="/auth" className="bg-black hover:bg-gray-800 text-white font-bold text-xs uppercase tracking-wider px-7 py-4 rounded-full flex items-center gap-3 shadow-xl shadow-black/10 transition-all hover:scale-[1.02] active:scale-95">
               <span>START FREE TRIAL</span>
               <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">→</span>
-            </button>
+            </Link>
 
             <button
               onClick={togglePlay}

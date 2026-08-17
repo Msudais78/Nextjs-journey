@@ -29,10 +29,10 @@ export default function Navbar() {
         </div>
 
         {/* Right CTA Button */}
-        <button className="bg-black hover:bg-gray-800 text-white font-bold text-xs uppercase tracking-wider px-5 py-2.5 rounded-full flex items-center gap-1.5 transition-all shadow-md active:scale-95">
+        <Link href="/auth" className="bg-black hover:bg-gray-800 text-white font-bold text-xs uppercase tracking-wider px-5 py-2.5 rounded-full flex items-center gap-1.5 transition-all shadow-md active:scale-95">
           <span>Launch App</span>
           <span className="text-gray-400 font-normal">›</span>
-        </button>
+        </Link>
       </nav>
     </header>
   );
