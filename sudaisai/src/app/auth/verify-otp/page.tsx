@@ -9,11 +9,35 @@
  * and pasting a full code directly.
  */
 
-import { useState, useRef } from 'react';
+import { useState, useRef, Suspense } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function VerifyOtpPage() {
+/**
+ * VerifyOtpContent Component
+ * 
+ * The main content wrapper for the OTP verification interface.
+ * It manages the state of the 6-digit OTP code, handles input logic
+ * (typing, pasting, backspacing), and coordinates API submissions.
+ */
+function VerifyOtpContent() {
+  // Navigation hooks for redirecting after success and reading URL query params
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  // Extract the email parameter that was passed from the signup page
+  const email = searchParams.get('email') || 'your email';
+
+  // State Management
+  // Array storing the 6 individual digits of the OTP code
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  // Tracks whether an API request is currently in progress
+  const [isLoading, setIsLoading] = useState(false);
+  // Holds any error messages returned from the API or validation logic
+  const [errorMsg, setErrorMsg] = useState('');
+  // Holds success messages for the UI before redirecting
+  const [successMsg, setSuccessMsg] = useState('');
+
+  // Refs for each input box to allow programmatic auto-focusing
   const inputRefs = [
     useRef<HTMLInputElement>(null),
     useRef<HTMLInputElement>(null),
@@ -23,24 +47,39 @@ export default function VerifyOtpPage() {
     useRef<HTMLInputElement>(null),
   ];
 
+  /**
+   * Handles changes to an individual OTP input box.
+   * Ensures only numbers are accepted and auto-focuses the next box.
+   * 
+   * @param index - The index of the input box being modified (0-5)
+   * @param value - The character typed into the box
+   */
   const handleChange = (index: number, value: string) => {
     if (value.length > 1) {
       value = value.slice(-1); // Only take the last character if multiple are pasted/typed
     }
     
-    // Only allow numbers
+    // Validate: Only allow numeric digits
     if (value && !/^\d+$/.test(value)) return;
 
+    // Update the OTP array state
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
 
-    // Move to next input if value is entered
+    // Auto-advance: Move focus to the next input box if a value was entered
     if (value && index < 5) {
       inputRefs[index + 1].current?.focus();
     }
   };
 
+  /**
+   * Intercepts key presses in the input boxes.
+   * Handles the 'Backspace' key to delete a digit and auto-focus the previous box.
+   * 
+   * @param index - The index of the active input box
+   * @param e - The Keyboard Event
+   */
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Backspace' && !otp[index] && index > 0) {
       // Move to previous input on backspace if current is empty
@@ -48,12 +87,20 @@ export default function VerifyOtpPage() {
     }
   };
 
+  /**
+   * Intercepts paste events on the first input box.
+   * Reads a 6-digit code from the clipboard and spreads it across all boxes.
+   * 
+   * @param e - The Clipboard Event
+   */
   const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
+    // Read up to 6 characters from the clipboard and split into an array
     const pastedData = e.clipboardData.getData('text').slice(0, 6).split('');
     const newOtp = [...otp];
     
     let currentFocus = 0;
+    // Iterate over pasted characters and fill in valid digits
     pastedData.forEach((char, index) => {
       if (/^\d+$/.test(char) && index < 6) {
         newOtp[index] = char;
@@ -63,7 +110,7 @@ export default function VerifyOtpPage() {
     
     setOtp(newOtp);
     
-    // Focus the next empty input or the last one
+    // Auto-advance: Focus the next empty input, or the very last input if fully populated
     if (currentFocus < 5) {
       inputRefs[currentFocus + 1].current?.focus();
     } else {
@@ -71,12 +118,53 @@ export default function VerifyOtpPage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  /**
+   * Submits the 6-digit OTP code to the verification API endpoint.
+   * Handles validation, loading states, and error/success rendering.
+   * 
+   * @param e - Form Submission Event
+   */
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const otpValue = otp.join('');
-    if (otpValue.length === 6) {
-      console.log('Verifying OTP:', otpValue);
-      // Add actual verification logic here
+    const otpValue = otp.join(''); // Combine the array into a single 6-character string
+    
+    // Pre-flight check: Ensure all 6 digits are provided
+    if (otpValue.length !== 6) {
+      setErrorMsg('Please enter all 6 digits');
+      return;
+    }
+
+    // Reset messages and begin loading state
+    setErrorMsg('');
+    setSuccessMsg('');
+    setIsLoading(true);
+
+    try {
+      // Dispatch the POST request to the API route
+      const response = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ otp: otpValue }),
+      });
+      
+      const data = await response.json();
+      
+      // Handle API errors (e.g. invalid OTP, expired OTP)
+      if (!response.ok) {
+        setErrorMsg(data.error || data.message || 'Verification failed');
+        setIsLoading(false);
+        return;
+      }
+
+      // Handle Success: Show message and setup automatic redirect
+      setSuccessMsg(data.message || 'Verification successful! Redirecting...');
+      setTimeout(() => {
+        router.push('/'); // Redirecting to home/dashboard
+      }, 2000);
+    } catch (error) {
+      // Catch network-level failures (e.g. no internet connection)
+      setErrorMsg('Network error. Please try again.');
+      setIsLoading(false);
     }
   };
 
@@ -117,8 +205,26 @@ export default function VerifyOtpPage() {
           {/* Titles */}
           <h1 className="text-2xl font-semibold mb-2 tracking-tight">Enter verification code</h1>
           <p className="text-gray-500 text-sm text-center mb-8">
-            We've sent a code to <span className="font-medium text-black">hello@example.com</span>
+            We've sent a code to <span className="font-medium text-black">{email}</span>
           </p>
+
+          {errorMsg && (
+            <div className="w-full bg-black text-white text-sm p-4 rounded-md border border-gray-800 flex items-start gap-3 shadow-lg animate-in fade-in slide-in-from-top-2 duration-300 mb-6">
+              <svg className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span className="font-semibold">{errorMsg}</span>
+            </div>
+          )}
+
+          {successMsg && (
+            <div className="w-full bg-black text-white text-sm p-4 rounded-md border border-gray-800 flex items-start gap-3 shadow-lg animate-in fade-in slide-in-from-top-2 duration-300 mb-6">
+              <svg className="w-5 h-5 flex-shrink-0 mt-0.5 text-[#FDE047]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="font-semibold text-gray-100">{successMsg}</span>
+            </div>
+          )}
 
           {/* Form */}
           <form className="w-full flex flex-col items-center" onSubmit={handleSubmit}>
@@ -152,9 +258,10 @@ export default function VerifyOtpPage() {
             <div className="flex gap-4 w-full">
               <button
                 type="submit"
-                className="flex-1 bg-[#FDE047] hover:bg-[#FACC15] text-black font-medium py-3 rounded-md transition-colors duration-300"
+                disabled={isLoading}
+                className={`flex-1 bg-[#FDE047] hover:bg-[#FACC15] text-black font-medium py-3 rounded-md transition-colors duration-300 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
-                Verify
+                {isLoading ? 'Verifying...' : 'Verify'}
               </button>
               <Link
                 href="/auth"
@@ -168,5 +275,19 @@ export default function VerifyOtpPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function VerifyOtpPage() {
+  return (
+    // Wrap the component in Suspense since it uses the `useSearchParams` hook,
+    // which relies on client-side routing data. This ensures Next.js build compatibility.
+    <Suspense fallback={
+      <div className="min-h-screen flex w-full items-center justify-center bg-white">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+      </div>
+    }>
+      <VerifyOtpContent />
+    </Suspense>
   );
 }

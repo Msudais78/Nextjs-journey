@@ -16,29 +16,41 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export default function AuthPage() {
-  const router = useRouter();
+  const router = useRouter(); // Next.js router for programmatic navigation
   
-  const [isLogin, setIsLogin] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  // --- UI Toggle States ---
+  const [isLogin, setIsLogin] = useState(false); // Toggles between Log In (true) and Sign Up (false) modes
+  const [showPassword, setShowPassword] = useState(false); // Toggles password visibility (text vs password input type)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // Toggles confirm password visibility
 
-  // Form states
+  // --- Form Input States ---
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [errorDetails, setErrorDetails] = useState<string[]>([]);
-  const [successMsg, setSuccessMsg] = useState('');
+  
+  // --- Form Submission & Feedback States ---
+  const [isLoading, setIsLoading] = useState(false); // Disables button and shows 'Processing...' text during API calls
+  const [errorMsg, setErrorMsg] = useState(''); // Stores the main error message to display in the red banner
+  const [errorDetails, setErrorDetails] = useState<string[]>([]); // Stores detailed validation errors (e.g. specific password requirements missed)
+  const [successMsg, setSuccessMsg] = useState(''); // Stores success messages to display before redirecting
 
+  /**
+   * Handles the submission of the authentication form.
+   * Processes either Log In or Sign Up based on the `isLogin` state.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Reset all feedback states before processing a new submission
     setErrorMsg('');
     setErrorDetails([]);
     setSuccessMsg('');
 
     if (!isLogin) {
+      // --- SIGN UP FLOW ---
+      
+      // Basic client-side validation: ensure passwords match
       if (password !== confirmPassword) {
         setErrorMsg('Passwords do not match');
         return;
@@ -46,6 +58,7 @@ export default function AuthPage() {
       
       setIsLoading(true);
       try {
+        // Send registration request to backend API
         const response = await fetch('/api/auth/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -54,8 +67,10 @@ export default function AuthPage() {
         
         const data = await response.json();
         
+        // Handle failed API responses (e.g., user exists, invalid email, weak password)
         if (!response.ok) {
           setErrorMsg(data.error || data.message || 'Something went wrong');
+          // If the backend returns detailed validation rules (like password requirements), store them
           if (data.details && Array.isArray(data.details)) {
             setErrorDetails(data.details);
           }
@@ -63,28 +78,35 @@ export default function AuthPage() {
           return;
         }
 
-        // Success - show message and redirect to OTP verification after delay
+        // Handle successful registration
+        // Display the success message and wait 2 seconds before redirecting so the user can read it
         setSuccessMsg(data.message || 'Success! Redirecting to verification...');
         setTimeout(() => {
+          // Redirect to the OTP verification page, passing the email via query parameters
           router.push(`/auth/verify-otp?email=${encodeURIComponent(email)}`);
         }, 2000);
       } catch (error) {
+        // Handle network errors (e.g., server down, no internet connection)
         setErrorMsg('Network error. Please try again.');
         setIsLoading(false);
       }
     } else {
-      // Login logic placeholder
+      // --- LOG IN FLOW ---
+      // Login logic placeholder (To be implemented)
       setIsLoading(true);
       setTimeout(() => setIsLoading(false), 1000);
     }
   };
 
   return (
+    // Main container ensuring the page fills the entire viewport height
     <div className="min-h-screen flex w-full bg-white text-black">
-      {/* Left Form Section */}
+      
+      {/* --- Left Section: Form Area --- */}
+      {/* Occupies full width on mobile, half width on large screens. Centers content dynamically. */}
       <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-4 sm:p-8 md:p-10">
         
-        {/* Logo & Title */}
+        {/* Logo & Title Header */}
         <div className="flex flex-col items-center mb-6 text-center">
           <div className="w-12 h-12 mb-2 relative">
             <Image 
@@ -97,7 +119,8 @@ export default function AuthPage() {
           <h1 className="text-2xl font-bold tracking-tight">Join sudaisai</h1>
         </div>
 
-        {/* Tab Switcher */}
+        {/* Auth Mode Toggle (Log In vs Sign Up) */}
+        {/* Switches the form state when clicked and animates the active background tab */}
         <div className="flex w-full max-w-sm bg-gray-100 rounded-md p-1 mb-4">
           <button
             onClick={() => setIsLogin(true)}
@@ -117,8 +140,11 @@ export default function AuthPage() {
           </button>
         </div>
 
-        {/* Form Fields */}
+        {/* Main Authentication Form */}
         <form className="w-full max-w-sm space-y-3" onSubmit={handleSubmit}>
+          
+          {/* Global Error Banner */}
+          {/* Displays top-level errors and detailed validation lists with a slide-in animation */}
           {errorMsg && (
             <div className="bg-black text-white text-sm p-4 rounded-md border border-gray-800 flex items-start gap-3 shadow-lg animate-in fade-in slide-in-from-top-2 duration-300">
               <svg className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -137,7 +163,8 @@ export default function AuthPage() {
             </div>
           )}
 
-          {successMsg && (
+          {/* Global Success Banner */}
+          {errorMsg === '' && successMsg && (
             <div className="bg-black text-white text-sm p-4 rounded-md border border-gray-800 flex items-start gap-3 shadow-lg animate-in fade-in slide-in-from-top-2 duration-300">
               <svg className="w-5 h-5 flex-shrink-0 mt-0.5 text-[#FDE047]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -146,6 +173,7 @@ export default function AuthPage() {
             </div>
           )}
           
+          {/* Username Input - Only rendered during Sign Up */}
           {!isLogin && (
             <div className="space-y-1">
               <label className="text-sm font-medium text-gray-700">Username <span className="text-red-500">*</span></label>
@@ -160,6 +188,7 @@ export default function AuthPage() {
             </div>
           )}
 
+          {/* Email Input - Shared between Log In and Sign Up */}
           <div className="space-y-1">
             <label className="text-sm font-medium text-gray-700">Email address <span className="text-red-500">*</span></label>
             <input
@@ -172,6 +201,7 @@ export default function AuthPage() {
             />
           </div>
 
+          {/* Password Input - Features visibility toggle button (eye icon) */}
           <div className="space-y-1 relative">
             <label className="text-sm font-medium text-gray-700">Password <span className="text-red-500">*</span></label>
             <div className="relative">
@@ -203,6 +233,7 @@ export default function AuthPage() {
             </div>
           </div>
 
+          {/* Confirm Password Input - Only rendered during Sign Up */}
           {!isLogin && (
             <div className="space-y-1 relative">
               <label className="text-sm font-medium text-gray-700">Confirm Password <span className="text-red-500">*</span></label>
@@ -236,6 +267,7 @@ export default function AuthPage() {
             </div>
           )}
 
+          {/* Additional Options: Remember me & Forgot Password */}
           <div className="flex items-center justify-between pt-1">
             <label className="flex items-center gap-2 text-xs text-gray-500 cursor-pointer">
               <input type="checkbox" className="rounded border-gray-300 text-yellow-400 focus:ring-yellow-400" />
@@ -246,6 +278,7 @@ export default function AuthPage() {
             </Link>
           </div>
 
+          {/* Form Submit Button - Adapts text based on state */}
           <button
             type="submit"
             disabled={isLoading}
@@ -255,15 +288,17 @@ export default function AuthPage() {
           </button>
         </form>
 
-        {/* Divider */}
+        {/* --- Social Login & Divider Section --- */}
+        {/* Divider with dynamic text indicating current auth mode */}
         <div className="w-full max-w-sm flex items-center my-6">
           <div className="grow border-t border-dotted border-gray-300"></div>
           <span className="px-4 text-xs text-gray-400">Or {isLogin ? 'Log in' : 'Sign up'} with</span>
           <div className="grow border-t border-dotted border-gray-300"></div>
         </div>
 
-        {/* Social Buttons */}
+        {/* Social Buttons (Currently placeholders without OAuth integration) */}
         <div className="w-full max-w-sm space-y-2">
+          {/* Google Login Button */}
           <button className="w-full flex items-center justify-center gap-3 bg-white border border-gray-200 hover:bg-gray-50 text-sm font-medium py-2 rounded-md transition-colors">
             <svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -274,6 +309,7 @@ export default function AuthPage() {
             Continue with Google
           </button>
           
+          {/* Apple Login Button */}
           <button className="w-full flex items-center justify-center gap-3 bg-white border border-gray-200 hover:bg-gray-50 text-sm font-medium py-2 rounded-md transition-colors">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
               <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.04 2.31-.85 3.78-.71 1.67.14 2.83.82 3.6 2.01-3.04 1.76-2.51 5.92.51 7.21-.69 1.6-1.57 3-2.97 3.66zm-3.66-14.7c.72-1.12 1.07-2.3.93-3.58-1.13.1-2.48.74-3.25 1.83-.65.92-.99 2.15-.84 3.38 1.25.14 2.45-.51 3.16-1.63z" />
@@ -282,28 +318,29 @@ export default function AuthPage() {
           </button>
         </div>
 
-        {/* Terms */}
+        {/* --- Terms and Privacy Links --- */}
         <div className="w-full max-w-sm mt-5 space-y-3">
           <label className="flex items-start gap-2 text-xs text-gray-500 cursor-pointer">
             <input type="checkbox" className="mt-0.5 rounded border-gray-300 text-yellow-400 focus:ring-yellow-400" />
             I don't want to receive emails about sudaisai feature updates and best practice
           </label>
           <p className="text-[10px] text-gray-400 leading-tight">
-            By creating account, you agree to our <Link href="#" className="hover:text-black">Terms of Service</Link> and <Link href="#" className="hover:text-black">Privacy Policy</Link>
+            By creating an account, you agree to our <Link href="#" className="hover:text-black">Terms of Service</Link> and <Link href="#" className="hover:text-black">Privacy Policy</Link>
           </p>
         </div>
       </div>
 
-      {/* Right Image Section */}
+      {/* --- Right Section: Showcase Image --- */}
+      {/* Hidden on mobile, takes up half width on large screens */}
       <div className="hidden lg:block lg:w-1/2 relative bg-[#0B151F]">
         <Image 
-          src="/ai-hero.jpg" 
-          alt="AI Interface Hero" 
+          src="/holographic_human_avatar.webp" 
+          alt="Holographic Human Avatar" 
           fill
           className="object-cover object-center"
           priority
         />
-        {/* Subtle overlay to make it blend with the futuristic aesthetic */}
+        {/* Overlay gradient to blend the image's bottom edge seamlessly */}
         <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent"></div>
       </div>
     </div>
