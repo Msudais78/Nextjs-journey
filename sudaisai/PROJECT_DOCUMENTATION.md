@@ -9,7 +9,7 @@ Welcome to the complete, file-by-file documentation for the **sudaisai** project
 ### 1.1 [package.json](file:///e:/project/sudaisai/package.json)
 
 - 🎯 **Why it Exists:** Serves as the central manifest for Node.js projects. It declares project dependencies, scripts, versioning, and environment dependencies.
-- 📄 **What it Contains:** Project metadata (`name: "sudaisai"`), npm scripts (`dev`, `build`, `start`, `lint`), production dependencies (`@prisma/client`, `bcrypt`, `cors`, `dotenv`, `jsonwebtoken`, `next`, `nodemailer`, `react`, `react-dom`), and dev dependencies (`tailwindcss`, `typescript`, `prisma`, `eslint`, `@types/nodemailer`, `@types/*`).
+- 📄 **What it Contains:** Project metadata (`name: "sudaisai"`), npm scripts (`dev`, `build`, `start`, `lint`), production dependencies (`@prisma/client`, `bcrypt`, `cors`, `dotenv`, `jsonwebtoken`, `mailersend`, `next`, `react`, `react-dom`), and dev dependencies (`tailwindcss`, `typescript`, `prisma`, `eslint`, `@types/*`).
 - ⚙️ **Function & Purpose:** Defines the project requirements and entry points for package managers (npm/yarn/pnpm).
 - 🔄 **How it Works:** When running `npm install`, npm resolves packages listed here. When running `npm run dev`, it executes `next dev` to start the Next.js local development server.
 
@@ -63,7 +63,7 @@ Welcome to the complete, file-by-file documentation for the **sudaisai** project
 ### 1.7 [.env](file:///e:/project/sudaisai/.env) & [.env.example](file:///e:/project/sudaisai/.env.example)
 
 - 🎯 **Why it Exists:** Stores sensitive environment variables (like database credentials, secret keys) outside the source code repository.
-- 📄 **What it Contains:** Key-value pairs such as `DATABASE_URL="mysql://root:password@localhost:3306/sudaisai"`. `.env.example` provides a sanitized template for developers.
+- 📄 **What it Contains:** Key-value pairs such as `DATABASE_URL`, `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, and `MAILERSEND_API_KEY`. `.env.example` provides a sanitized template for developers.
 - ⚙️ **Function & Purpose:** Provides secret management and environment-specific runtime configurations.
 - 🔄 **How it Works:** Loaded by Next.js and Prisma CLI (`dotenv/config`) into `process.env`.
 
@@ -198,7 +198,7 @@ Welcome to the complete, file-by-file documentation for the **sudaisai** project
 ### 3.3 [prisma/prisma.ts](file:///e:/project/sudaisai/prisma/prisma.ts)
 
 - 🎯 **Why it Exists:** Implements a global singleton pattern for the `PrismaClient` using `PrismaMariaDb` driver adapter required in Prisma 7+.
-- 📄 **What it Contains:** Instantiates `PrismaMariaDb` adapter with `process.env.DATABASE_URL` and attaches `PrismaClient` to `global.prisma`.
+- 📄 **What it Contains:** Instantiates `PrismaMariaDb` adapter and attaches `PrismaClient` to `global.prisma`. Configuration uses variables from `process.env` (e.g., `DB_HOST`, `DB_PORT`).
 - ⚙️ **Function & Purpose:** Prevents database connection pool exhaustion in Next.js development mode during Hot Module Reloading (HMR) while enforcing Prisma 7 driver adapter compliance.
 - 🔄 **How it Works:** Reuses the existing client instance in development across file saves.
 
@@ -215,9 +215,9 @@ Welcome to the complete, file-by-file documentation for the **sudaisai** project
 
 ### 3.5 [src/utils/email.ts](file:///e:/project/sudaisai/src/utils/email.ts)
 
-- 🎯 **Why it Exists:** Provides email dispatch utility functions using Brevo Transactional Email API (`@getbrevo/brevo`) and Nodemailer for sending OTP verification codes.
-- 📄 **What it Contains:** `sendOTPEmail(toEmail, otp)` function authenticating with `process.env.SMTP_API_KEY` via Brevo SDK / REST API, generating responsive HTML verification email templates, and providing fallback support for standard SMTP and dev-mode console logging.
-- ⚙️ **Function & Purpose:** Sends 6-digit OTP codes for account verification using Brevo's cloud email infrastructure.
+- 🎯 **Why it Exists:** Provides email dispatch utility functions using the MailerSend API for sending OTP verification codes.
+- 📄 **What it Contains:** `sendOTPEmail(toEmail, otp)` function authenticating with `process.env.MAILERSEND_API_KEY` via the MailerSend SDK, generating HTML verification email templates, and providing fallback support for dev-mode console logging.
+- ⚙️ **Function & Purpose:** Sends 6-digit OTP codes for account verification using MailerSend's cloud email infrastructure.
 - 🔄 **How it Works:** Called by `POST /api/auth/signup` to dispatch verification codes to users during registration.
 
 ---
@@ -443,9 +443,32 @@ Welcome to the complete, file-by-file documentation for the **sudaisai** project
 
 ### [src/app/api/auth/signup/route.ts](file:///e:/project/sudaisai/src/app/api/auth/signup/route.ts)
 - **Updates:** Replaced duplicate logic with shared pi-helpers. Generates and returns a JWT token. Removed rate limiting logic.
+- **Updates:** Replaced duplicate logic with shared  pi-helpers. Generates and returns a JWT token. Removed rate limiting logic.
 
 ### [src/app/api/auth/verify-otp/route.ts](file:///e:/project/sudaisai/src/app/api/auth/verify-otp/route.ts)
 - **Updates:** Completely restructured to validate the JWT token instead of raw user inputs. Removed rate limiting and attempt tracking logic.
 
 ### [prisma/schema.prisma](file:///e:/project/sudaisai/prisma/schema.prisma)
-- **Updates:** Removed the ttempts field from PendingRegistration as attempt locking was removed.
+- **Updates:** Removed the  ttempts field from PendingRegistration as attempt locking was removed.
+
+---
+
+## 📌 8. Authentication UI Pages (`src/app/auth/`)
+
+### 8.1 [src/app/auth/page.tsx](file:///e:/project/sudaisai/src/app/auth/page.tsx)
+- 🎯 **Why it Exists:** Provides the user-facing interface for user authentication.
+- 📄 **What it Contains:** A unified page featuring both "Log In" and "Sign Up" tabs, social authentication buttons (Google, Apple), and email/password forms with visibility toggling.
+- ⚙️ **Function & Purpose:** Serves as the primary gateway for users entering the platform.
+- 🔄 **How it Works:** Client-side React component maintaining local state for the active tab (`isLogin`) and password visibility.
+
+### 8.2 [src/app/auth/reset/page.tsx](file:///e:/project/sudaisai/src/app/auth/reset/page.tsx)
+- 🎯 **Why it Exists:** Allows users who forgot their passwords to request a password reset link.
+- 📄 **What it Contains:** A minimalistic form requesting the user's email address, and a submission confirmation screen.
+- ⚙️ **Function & Purpose:** Initiates the account recovery process.
+- 🔄 **How it Works:** Client-side React component linked from the main auth page's "Forgot Password?" link.
+
+### 8.3 [src/app/auth/verify-otp/page.tsx](file:///e:/project/sudaisai/src/app/auth/verify-otp/page.tsx)
+- 🎯 **Why it Exists:** Provides an interface for entering the 6-digit One-Time Password sent to the user during registration.
+- 📄 **What it Contains:** A 6-input layout for entering the verification code, supporting auto-advance, backspace handling, and paste events.
+- ⚙️ **Function & Purpose:** Captures the OTP required to finalize user registration and verify email ownership.
+- 🔄 **How it Works:** Client-side React component that manages an array of 6 digit states and auto-focuses input refs dynamically.
