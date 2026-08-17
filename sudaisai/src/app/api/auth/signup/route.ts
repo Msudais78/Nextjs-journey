@@ -99,10 +99,12 @@ export async function POST(request: Request) {
       await bcrypt.hash(password, BCRYPT_ROUNDS);
 
       // Generic message - don't tell them if email or username was the problem
+      console.log("the user exists");
       return NextResponse.json(
-        { message: 'If these details are available, an OTP will be sent to your email.' },
+        { message: 'If these details are available, an OTP will be sent to your email fuck you.' },
         { status: 200 }
-      );
+       );
+
     }
 
     // Hash the password BEFORE storing in pending table
@@ -142,7 +144,10 @@ export async function POST(request: Request) {
 
     // Send OTP email BEFORE creating JWT
     // If email fails, we haven't given them a token yet
-    await sendOTPEmail(sanitizedEmail, otp);
+    const emailSent = await sendOTPEmail(sanitizedEmail, otp);
+    if (!emailSent) {
+      throw new Error('Failed to dispatch OTP email via SMTP provider.');
+    }
 
     // Create JWT token containing the email
     // Frontend MUST send this token with the OTP verification request
@@ -167,7 +172,16 @@ export async function POST(request: Request) {
 
     return response;
 
-  } catch (error) {
+  } catch (error: any) {
+    if (error.code === 'P2002') {
+      // Someone is currently signing up with this username, or it's a conflict
+      // Return the same anti-enumeration response as we do for existing users
+      return NextResponse.json(
+        { message: 'If these details are available, an OTP will be sent to your email.' },
+        { status: 200 }
+      );
+    }
+    
     console.error('[signup] Unexpected error:', error);
     return errorResponse('An unexpected error occurred. Please try again.', 500);
   }

@@ -6,12 +6,20 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient(): PrismaClient {
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    throw new Error('DATABASE_URL environment variable is missing in process.env');
-  }
+  // PrismaMariaDb is a FACTORY — pass it a config object directly.
+  // Do NOT pass a pre-built pool; it creates its own pool internally via mariadb.createPool(config).
+  const adapter = new PrismaMariaDb({
+    host: process.env.DB_HOST,
+    port: Number(process.env.DB_PORT),
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    ssl: false,
+    allowPublicKeyRetrieval: true,
+    connectionLimit: 10,
+    connectTimeout: 20000,
+  });
 
-  const adapter = new PrismaMariaDb(connectionString);
   return new PrismaClient({ adapter });
 }
 
@@ -20,4 +28,3 @@ export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
 export default prisma;
-

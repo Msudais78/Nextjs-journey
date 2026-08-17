@@ -87,3 +87,5 @@ Attack / Vulnerability │ Fix Applied │
 # what is nginx
 
 # what is proxy? what is forward proxy? what is reverse proxy?
+
+# database connection pool?
