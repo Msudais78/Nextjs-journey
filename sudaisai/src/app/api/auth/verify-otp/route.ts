@@ -13,6 +13,8 @@ import prisma from '@/utils/prisma';
 import { sanitizeString, INPUT_LIMITS } from '@/utils/validation';
 import { verifyOTPToken, extractBearerToken } from '@/utils/jwt';
 import { errorResponse, parseJsonBody } from '@/utils/api-helpers';
+import jwt from 'jsonwebtoken';
+import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   // ─── Step 2: Extract & Verify JWT Token ────────────────────────────────────
@@ -116,10 +118,10 @@ export async function POST(request: NextRequest) {
     // ─── Step 9: OTP is Correct - Create Real User Account ───────────────────
     // Use a database transaction so BOTH operations succeed or BOTH fail
     // We never want a situation where pending is deleted but user isn't created
-    await prisma.$transaction(async (tx) => {
+    const user = await prisma.$transaction(async (tx) => {
       // Create the real user account using data from pending registration
       // The password was already hashed during signup - we reuse that hash
-      await tx.user.create({
+      const newUser = await tx.user.create({
         data: {
           email: pendingRecord.email,
           username: pendingRecord.username,
@@ -134,6 +136,29 @@ export async function POST(request: NextRequest) {
       await tx.pendingRegistration.delete({
         where: { email: emailFromToken },
       });
+      
+      return newUser;
+    });
+    
+    const token = jwt.sign(
+      {
+        userId: user.id,
+        role: user.role
+      },
+      process.env.JWT_SECRET!,
+      { expiresIn: '7d' }
+    );
+
+    const cookieStore = await cookies();
+    const isProduction = process.env.NODE_ENV === 'production';
+    cookieStore.set({
+      name: 'session_token',
+      value: token,
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'strict' : 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
     });
 
     // ─── Step 10: Return Success ──────────────────────────────────────────────
