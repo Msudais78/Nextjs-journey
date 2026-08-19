@@ -281,12 +281,12 @@ Welcome to the complete, file-by-file documentation for the **sudaisai** project
 
 ---
 
-### 4.6 [src/proxy.ts](file:///e:/project/sudaisai/src/proxy.ts)
+### 4.6 [src/middleware.ts](file:///e:/project/sudaisai/src/middleware.ts)
 
-- 🎯 **Why it Exists:** Intercepts incoming HTTP requests at the edge/server level before reaching API route handlers.
-- 📄 **What it Contains:** `proxy(request: NextRequest)` export handler and `config.matcher` targeting `/api/auth/:path*`.
-- ⚙️ **Function & Purpose:** Serves as the central edge/server request interceptor.
-- 🔄 **How it Works:** Executed automatically by Next.js request pipeline on matched routes before delegating to route handlers.
+- 🎯 **Why it Exists:** Intercepts incoming HTTP requests at the edge/server level before reaching API route handlers or pages. Next.js natively expects this filename.
+- 📄 **What it Contains:** The `middleware(request: NextRequest)` default export handler, JWT verification via `jose`, and `config.matcher` excluding static assets.
+- ⚙️ **Function & Purpose:** Acts as the central edge-level security gatekeeper to protect routes like `/dashboard` and redirect authenticated users away from public routes like `/auth` and `/`.
+- 🔄 **How it Works:** Executed automatically by Next.js on matched routes. Checks `session_token` cookie, validates JWT, and enforces redirects based on route configurations (`publicRoutes` and `protectedRoutes`).
 
 ---
 
@@ -450,6 +450,12 @@ Welcome to the complete, file-by-file documentation for the **sudaisai** project
 
 ### [prisma/schema.prisma](file:///e:/project/sudaisai/prisma/schema.prisma)
 - **Updates:** Removed the  ttempts field from PendingRegistration as attempt locking was removed.
+
+### [src/middleware.ts](file:///e:/project/sudaisai/src/middleware.ts) (Formerly proxy.ts)
+- **Updates:** Renamed from `proxy.ts` to `middleware.ts` to fix Next.js not executing it. Fixed a critical routing bug that caused infinite redirects by ensuring exact matching for the root `/` path. Added extensive JSDoc documentation.
+
+### [src/app/api/auth/signup/route.ts](file:///e:/project/sudaisai/src/app/api/auth/signup/route.ts)
+- **Updates:** Cleaned up unprofessional error messaging and sanitized responses during duplicate user checks.
 
 ---
 
