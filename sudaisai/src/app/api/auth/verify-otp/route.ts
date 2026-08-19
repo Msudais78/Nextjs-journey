@@ -14,14 +14,13 @@ import { sanitizeString, INPUT_LIMITS } from '@/utils/validation';
 import { verifyOTPToken, extractBearerToken } from '@/utils/jwt';
 import { errorResponse, parseJsonBody } from '@/utils/api-helpers';
 import jwt from 'jsonwebtoken';
-import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   // ─── Step 2: Extract & Verify JWT Token ────────────────────────────────────
   // This is the GATE that prevents direct access to this endpoint
   // Without a valid JWT from the signup step, you cannot proceed
   const rawToken = request.cookies.get('otpToken')?.value || extractBearerToken(request);
-
+  
   if (!rawToken) {
     // They tried to call verify-otp without going through signup first
     return errorResponse(
@@ -149,9 +148,16 @@ export async function POST(request: NextRequest) {
       { expiresIn: '7d' }
     );
 
-    const cookieStore = await cookies();
+    // ─── Step 10: Return Success ──────────────────────────────────────────────
+    const response = NextResponse.json(
+      {
+        message: 'Email verified successfully! Your account has been created.',
+      },
+      { status: 201 } // 201 Created - a new resource was created
+    );
+
     const isProduction = process.env.NODE_ENV === 'production';
-    cookieStore.set({
+    response.cookies.set({
       name: 'session_token',
       value: token,
       httpOnly: true,
@@ -160,14 +166,6 @@ export async function POST(request: NextRequest) {
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/',
     });
-
-    // ─── Step 10: Return Success ──────────────────────────────────────────────
-    const response = NextResponse.json(
-      {
-        message: 'Email verified successfully! Your account has been created.',
-      },
-      { status: 201 } // 201 Created - a new resource was created
-    );
 
     // Clean up the OTP cookie since the registration is complete
     response.cookies.delete('otpToken');

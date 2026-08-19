@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import {
@@ -62,8 +61,11 @@ export async function POST(request: Request) {
     );
 
     // SECURE DELIVERY: Set the token as an HttpOnly cookie directly from the server
-    const cookieStore = await cookies();
-    cookieStore.set({
+    const response = successResponse('Login successful', { 
+      user: { id: user.id, username: user.username, email: user.email, role: user.role } 
+    });
+
+    response.cookies.set({
       name: 'session_token',
       value: token,
       httpOnly: true, // Prevents JavaScript/XSS access
@@ -73,10 +75,7 @@ export async function POST(request: Request) {
       path: '/',
     });
 
-    // Return the safe user data to update frontend state, but DO NOT return the token here
-    return successResponse('Login successful', { 
-      user: { id: user.id, username: user.username, email: user.email, role: user.role } 
-    });
+    return response;
     
   } catch (error) {
     console.error('Login error:', error);
