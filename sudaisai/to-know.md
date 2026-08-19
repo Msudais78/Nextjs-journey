@@ -99,3 +99,5 @@ day 1:
 # what is cookies
 
 # difference between local storage and cookies?
+
+# difference between edge run time and node run time

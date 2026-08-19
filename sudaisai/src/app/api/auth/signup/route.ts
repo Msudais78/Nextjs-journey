@@ -101,7 +101,7 @@ export async function POST(request: Request) {
       // Generic message - don't tell them if email or username was the problem
       console.log("the user exists");
       return NextResponse.json(
-        { message: 'If these details are available, an OTP will be sent to your email fuck you.' },
+        { message: 'If these details are valid, an OTP will be sent to your email.' },
         { status: 200 }
        );
 
