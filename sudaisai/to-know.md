@@ -89,3 +89,13 @@ Attack / Vulnerability │ Fix Applied │
 # what is proxy? what is forward proxy? what is reverse proxy?
 
 # database connection pool?
+
+day 1:
+
+# what is jwt?
+
+# what is session
+
+# what is cookies
+
+# difference between local storage and cookies?
