@@ -1,8 +1,8 @@
 // ==============================================================================
-// NEXT.JS MIDDLEWARE — SECURITY & PASS-THROUGH INTERCEPTOR
+// NEXT.JS PROXY — SECURITY & PASS-THROUGH INTERCEPTOR
 // ==============================================================================
-// This file acts as an edge/server-level gatekeeper. Next.js automatically runs
-// this middleware on incoming requests matching the defined route patterns BEFORE
+// This file acts as a server-level gatekeeper. Next.js automatically runs
+// this proxy on incoming requests matching the defined route patterns BEFORE
 // they reach API route handlers or page components.
 // ==============================================================================
 
@@ -23,8 +23,11 @@ const publicRoutes = [
   '/api/auth/login',
   '/api/auth/signup',
   '/api/auth/verify-otp',
+  '/api/auth/reset-password',
   '/',
-  '/auth'
+  '/auth',
+  '/auth/reset',
+  '/auth/new-password'
 ];
 
 /**
@@ -37,13 +40,13 @@ const protectedRoutes = [
 ];
 
 /**
- * Main Middleware Function
+ * Main Proxy Function
  * Intercepts requests to verify authentication state and handle route protection.
  * 
  * @param request - NextRequest context object containing URL, headers, and cookies
  * @returns NextResponse (either a redirect or pass-through to the requested route)
  */
-export const middleware = async (request: NextRequest) => {
+export const proxy = async (request: NextRequest) => {
   const { pathname } = request.nextUrl;
   const sessionToken = request.cookies.get('session_token')?.value;
 
@@ -94,9 +97,9 @@ export const middleware = async (request: NextRequest) => {
 
 /**
  * Route Matcher Configuration
- * Defines paths intercepted by this middleware.
+ * Defines paths intercepted by this proxy.
  * Excludes API routes, static Next.js files, and image optimization endpoints
- * to prevent unnecessary middleware execution overhead.
+ * to prevent unnecessary proxy execution overhead.
  */
 export const config = {
   matcher: [

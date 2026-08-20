@@ -101,3 +101,8 @@ day 1:
 # difference between local storage and cookies?
 
 # difference between edge run time and node run time
+
+# routing in next js
+
+# what is foreign key?
+diag

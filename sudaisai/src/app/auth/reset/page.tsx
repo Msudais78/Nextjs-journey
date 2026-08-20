@@ -3,27 +3,74 @@
 /**
  * ResetPasswordPage Component
  * 
- * This page allows users to request a password reset link 
- * by entering their email address. It features a decorative 
- * layout matching the main authentication pages.
+ * Route: /auth/reset
+ * Purpose: Allows users to request a password reset link by entering their 
+ *          registered email address. On successful submission, displays a 
+ *          confirmation message. Matches the decorative layout of the main 
+ *          authentication pages.
+ * 
+ * Flow:
+ * 1. User enters their email address
+ * 2. Form submits a POST request to /api/auth/reset-password
+ * 3. On success: Shows a confirmation message with a link back to login
+ * 4. On error: Displays the error message from the API
  */
 
-import { useState } from 'react';
-import Link from 'next/link';
+// --- Dependency Imports ---
+import { useState } from 'react';   // React hook for managing component-level state
+import Link from 'next/link';       // Next.js optimized client-side navigation component
 
 export default function ResetPasswordPage() {
-  const [email, setEmail] = useState('');
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  // --- Component State ---
+  const [email, setEmail] = useState('');            // Stores the user's email input
+  const [isSubmitted, setIsSubmitted] = useState(false); // Tracks whether the form has been successfully submitted (switches to confirmation view)
+  const [errorMsg, setErrorMsg] = useState('');       // Stores error messages from API or network failures
 
-  const handleSubmit = (e: React.FormEvent) => {
+  /**
+   * Handles the form submission for requesting a password reset.
+   * Sends the email to the backend API and toggles the UI state based on the response.
+   * 
+   * @param e - React form event, used to prevent default browser form submission
+   */
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitted(true);
-    // Add actual reset logic here
+    
+    // Clear any previous error messages before a new submission attempt
+    setErrorMsg('');
+    
+    try {
+      // Send a POST request to the reset-password API endpoint with the user's email
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),      
+      });
+
+      // Parse the JSON response body from the API
+      const data = await response.json();
+
+      // Handle API errors (validation failures, server errors, etc.)
+      if (!response.ok) {
+        setErrorMsg(data.error || data.message || 'Something went wrong');
+      } else {
+        // On success, switch to the confirmation view
+        setIsSubmitted(true);
+      }
+    } catch (error) {
+      // Handle network-level errors (server unreachable, no internet, etc.)
+      setErrorMsg('Network error. Please try again.');
+    }
   };
 
   return (
+    // --- Main Page Container ---
+    // Full-screen white background layout with centered content
     <div className="min-h-screen w-full bg-white text-black flex flex-col relative overflow-hidden">
-      {/* Decorative top background pattern (approximation of the wave grid) */}
+
+      {/* Decorative Background Pattern */}
+      {/* Creates a subtle grid pattern at the top of the page using CSS gradients */}
       <div 
         className="absolute top-0 left-0 w-full h-64 opacity-20 pointer-events-none"
         style={{
@@ -32,10 +79,12 @@ export default function ResetPasswordPage() {
         }}
       ></div>
 
+      {/* --- Centered Content Card --- */}
       <div className="flex-1 flex flex-col items-center justify-center p-6 relative z-10">
         <div className="w-full max-w-md bg-white rounded-xl p-8 flex flex-col items-center">
           
           {/* Circular Reset Icon */}
+          {/* Three concentric circles (gray-50 → gray-200 → black) with a refresh/reset SVG icon */}
           <div className="mb-8">
             <div className="w-28 h-28 rounded-full bg-gray-50 flex items-center justify-center shadow-sm">
               <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center shadow-inner">
@@ -55,27 +104,32 @@ export default function ResetPasswordPage() {
             </div>
           </div>
 
-          {/* Titles */}
+          {/* Page Title & Subtitle */}
           <h1 className="text-2xl font-semibold mb-2 tracking-tight">Reset password</h1>
           <p className="text-gray-500 text-sm text-center mb-8">
             Enter your email address to reset your password
           </p>
 
-          {/* Dotted Divider */}
+          {/* Dotted Divider Line */}
           <div className="w-full border-t border-dotted border-gray-300 mb-8"></div>
 
-          {/* Form */}
+          {/* --- Conditional Rendering: Confirmation Message or Email Form --- */}
           {isSubmitted ? (
+            // Success State: Show confirmation message after successful submission
             <div className="w-full text-center">
+              {/* Green confirmation banner with the submitted email */}
               <div className="bg-green-50 text-green-700 p-4 rounded-md text-sm mb-6 border border-green-100">
                 If an account exists with {email}, you will receive a password reset link shortly.
               </div>
+              {/* Link to navigate back to the login page */}
               <Link href="/auth" className="text-sm font-medium text-black hover:underline">
                 Return to Login
               </Link>
             </div>
           ) : (
+            // Default State: Show the email input form
             <form className="w-full space-y-5" onSubmit={handleSubmit}>
+              {/* Email Address Input Field */}
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-gray-700">Email address</label>
                 <input
@@ -87,6 +141,7 @@ export default function ResetPasswordPage() {
                 />
               </div>
 
+              {/* Submit Button — Yellow CTA matching the app's design system */}
               <button
                 type="submit"
                 className="w-full bg-[#FDE047] hover:bg-[#FACC15] text-black font-medium py-3 rounded-md transition-colors duration-300"
@@ -96,7 +151,7 @@ export default function ResetPasswordPage() {
             </form>
           )}
 
-          {/* Back Link */}
+          {/* Back to Login Link — Only shown when the form is visible (not after submission) */}
           {!isSubmitted && (
             <div className="mt-8 text-center">
               <Link href="/auth" className="text-xs text-gray-500 hover:text-black transition-colors">

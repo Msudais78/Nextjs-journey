@@ -96,10 +96,33 @@ model User {
     createdAt DateTime @default(now()) @map("created_at")
 
     /// Account modification timestamp automatically updated on any field mutation
-    updatedAt DateTime @updatedAt @map("updated_at")
+    updatedAt      DateTime         @updatedAt @map("updated_at")
+    resetPasswords resetPasswords[]
 
     // Database-level performance indexes
     @@index([createdAt], name: "idx_users_created_at")
     // Database table name mapping (follows SQL snake_case convention)
     @@map("users")
+}
+
+model resetPasswords {
+    /// Unique identifier generated using collision-resistant CUID (Collision-resistant Unique Identifier)
+    id String @id @default(cuid())
+
+    /// User's id who requested password reset
+    userId String @map("user_id")
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    /// Cryptographic hash of the password reset token
+    tokenHash String   @map("token_hash")
+    /// Timestamp after which the password reset token expires (used for TTL verification and database cleanup)
+    expiresAt DateTime @map("expires_at")
+
+    /// Record creation timestamp managed automatically by database
+    createdAt DateTime @default(now()) @map("created_at")
+
+    // Database-level performance indexes
+    @@index([createdAt], name: "idx_reset_password_created_at")
+    // Database table name mapping (follows SQL snake_case convention)
+    @@map("reset_passwords")
 }
